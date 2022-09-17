@@ -1,0 +1,12 @@
+neuenv_env.yaml
+LiterallyWikidata/Attributes
+LiterallyWikidata/Entities
+LiterallyWikidata/LitWD1K
+LiterallyWikidata/LitWD19K
+LiterallyWikidata/LitWD48K
+LiterallyWikidata/Relations
+MTKGNN/KGMTL4Rec/test.ipynb
+MTKGNN/src/main_epoch5.py
+MTKGNN/src/check.py
+MTKGNN/KGMTL4Rec/__pycache__
+MTKGNN/KGMTL4Rec/.ipynb_checkpoints
