@@ -12,8 +12,8 @@ from torch.utils.data import Dataset, TensorDataset
 import argparse
 import sys,os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-sys.path.append('KGMTL4Rec/KGMTL4Rec')
-sys.path.append('KGMTL4Rec/src')
+sys.path.append('MTKGNN/KGMTL4Rec')
+sys.path.append('LiterallyWikidata')
 from Model import KGMTL
 from Evaluation import *
 from Data_Processing_copy_less import *

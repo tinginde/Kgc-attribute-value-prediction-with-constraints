@@ -29,7 +29,7 @@ class KGMTL_Data():
         self.test_rel_data = pd.read_csv(ds_path + 'LitWD1K/test.txt', sep='\t', names=['s', 'p', 'o'])
         
         ## Load Data for Attnet
-        self.attri_data = pd.read_csv(ds_path + 'LitWD48K/numeric_literals_final_ver03', sep='\t')
+        self.attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_final_ver04', sep='\t')
 # #減少輸入數量
 #         self.attri_data = self.attri_data.sample(frac=0.5, random_state=42)
         self.train_attri_data, valid_attri_data = train_test_split(self.attri_data, test_size=0.2,#stratify=self.attri_data['a'],
