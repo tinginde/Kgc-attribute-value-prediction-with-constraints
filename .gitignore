@@ -10,3 +10,5 @@ MTKGNN/src/main_epoch5.py
 MTKGNN/src/check.py
 MTKGNN/KGMTL4Rec/__pycache__
 MTKGNN/KGMTL4Rec/.ipynb_checkpoints
+.vscode/launch.json
+.vscode/settings.json
