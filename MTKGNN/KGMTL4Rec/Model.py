@@ -203,13 +203,11 @@ class KGMTL(nn.Module):
         x_ah = self.att_embeddings(att_tensor)
         x_h = self.ent_embeddings(ent_tensor)
         test_mm = self.ah(x_ah)
-        print(x_ah.size(), x_h.size(), test_mm.size(), sep='\t')
         inputs = torch.cat([self.ah(x_ah), self.Mh(x_h)], dim=2)
         ## hidden_head_att_net_fc1 is the head attribute net hidden layer
         head_att_net_fc1 = self.relu(self.hidden_attr_net_fc(inputs))
         pred_left = self.dropout(head_att_net_fc1) 
-        print(pred_left.size())
-        
+       
         x_at = self.att_embeddings(att_tensor)
         x_t = self.ent_embeddings(ent_tensor)
         inputs = torch.cat([self.at(x_at), self.Mt(x_t)], dim=2)

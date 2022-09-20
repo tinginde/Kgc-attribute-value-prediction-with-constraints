@@ -121,7 +121,7 @@ class KGMTL_Data():
         dict_e2rv = dict()
         for el in self.train_attri_data.values:
             attri = self.dict_all_2_idx[el[1]]
-            v = round(el[2],5)
+            v = el[2]
             e = self.dict_all_2_idx[el[0]]
             if e in dict_e2rv:
                 l = dict_e2rv[e]
@@ -170,10 +170,7 @@ class KGMTL_Data():
         y_head_attr = np.array(y_list_head_attr).reshape((len(X_list_head_attr), 1))
         y_tail_attr = np.array(y_list_tail_attr).reshape((len(X_list_tail_attr), 1))
         return X_head_attr, X_tail_attr, y_head_attr, y_tail_attr
-    
-
-
-    
+      
     def create_pytorch_data(self, X_triplets, y_triplets, X_head_attr, y_head_attr,
                            X_tail_attr, y_tail_attr,
                            batch_size,mode='train'):
@@ -209,31 +206,6 @@ class KGMTL_Data():
         
         return loader_triplets, loader_head_attr, loader_tail_attr
     
-
-# class LitWD(Dataset):
-#     def __init___(self, X_triplets, y_triplets, X_head_attr, y_head_attr, X_tail_attr, y_tail_attr, mode='train'):
-            # self.x_tensor_triplets = torch.from_numpy(X_triplets)
-            # self.y_tensor_triplets = torch.from_numpy(y_triplets)
-            ## data_triplets = TensorDataset(x_tensor_triplets, y_tensor_triplets)
-            ## loader_triplets = DataLoader(dataset=data_triplets, batch_size=batch_size, shuffle=True)
-            # ##
-            # self.x_tensor_head_attr = torch.from_numpy(X_head_attr)
-            # self.y_tensor_head_attr = torch.from_numpy(y_head_attr)
-            ## data_head_attr = TensorDataset(x_tensor_head_attr, y_tensor_head_attr)
-            ## loader_head_attr = DataLoader(dataset=data_head_attr, batch_size=batch_size, shuffle=True)
-            # ##
-            # self.x_tensor_tail_attr = torch.from_numpy(X_tail_attr)
-            # self.y_tensor_tail_attr = torch.from_numpy(y_tail_attr)
-            ## data_tail_attr = TensorDataset(x_tensor_tail_attr, y_tensor_tail_attr)
-            ## loader_tail_attr = DataLoader(dataset=data_tail_attr, batch_size=batch_size, shuffle=True)
-
-            # self.mode = mode
-
-#     def __getitem__(self, idx):
-#         self.sample = idx
-
-#     def __len__(self):
-#         return len(self.triples)
 
 
 
