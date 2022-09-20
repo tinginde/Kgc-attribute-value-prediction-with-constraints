@@ -24,9 +24,9 @@ class KGMTL_Data():
     def __init__(self, ds_path, Ns):
         self.Ns = Ns
         ## Load Data for Relnet
-        self.train_rel_data = pd.read_csv(ds_path + 'LitWD1K/train.txt', sep='\t', names=['s', 'p', 'o'])
-        self.val_rel_data = pd.read_csv(ds_path + 'LitWD1K/valid.txt', sep='\t', names=['s', 'p', 'o'])
-        self.test_rel_data = pd.read_csv(ds_path + 'LitWD1K/test.txt', sep='\t', names=['s', 'p', 'o'])
+        self.train_rel_data = pd.read_csv(ds_path + 'LitWD19K/train.txt', sep='\t', names=['s', 'p', 'o'])
+        self.val_rel_data = pd.read_csv(ds_path + 'LitWD19K/valid.txt', sep='\t', names=['s', 'p', 'o'])
+        self.test_rel_data = pd.read_csv(ds_path + 'LitWD19K/test.txt', sep='\t', names=['s', 'p', 'o'])
         
         ## Load Data for Attnet
         self.attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_final_ver04', sep='\t')
@@ -36,7 +36,7 @@ class KGMTL_Data():
                                                                     random_state=802)
         self.valid_attri_data, self.test_attri_data = train_test_split(valid_attri_data, test_size=0.5,#stratify=valid_attri_data['a'],
                                                                     random_state=802)   
-        self.att2df = pd.read_pickle(ds_path + 'LitWD48K/one_attri_one_df.pkl') 
+        #self.att2df = pd.read_pickle(ds_path + 'LitWD48K/one_attri_one_df.pkl') 
 
         ## Group Entities, relations, attributes
         self.entities = pd.read_csv(ds_path + 'Entities/entity_labels_en.txt', sep='\t', names=['label', 'name'])

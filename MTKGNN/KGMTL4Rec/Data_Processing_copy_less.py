@@ -1,3 +1,4 @@
+from unittest import TestLoader
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
@@ -24,9 +25,9 @@ class KGMTL_Data():
     def __init__(self, ds_path, Ns):
         self.Ns = Ns
         ## Load Data for Relnet
-        self.train_rel_data = pd.read_csv(ds_path + 'LitWD1K/train.txt', sep='\t', names=['s', 'p', 'o'])
-        self.val_rel_data = pd.read_csv(ds_path + 'LitWD1K/valid.txt', sep='\t', names=['s', 'p', 'o'])
-        self.test_rel_data = pd.read_csv(ds_path + 'LitWD1K/test.txt', sep='\t', names=['s', 'p', 'o'])
+        self.train_rel_data = pd.read_csv(ds_path + 'LitWD48K/train.txt', sep='\t', names=['s', 'p', 'o'])
+        self.val_rel_data = pd.read_csv(ds_path + 'LitWD48K/valid.txt', sep='\t', names=['s', 'p', 'o'])
+        self.test_rel_data = pd.read_csv(ds_path + 'LitWD48K/test.txt', sep='\t', names=['s', 'p', 'o'])
         
         ## Load Data for Attnet
         self.attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_final_ver04', sep='\t')
@@ -151,14 +152,15 @@ class KGMTL_Data():
                 l_vals = dict_e2rv[ei]
                 for el in l_vals:
                     ai = el[0]
-                    vi = el[1]
+                    vi = el[1]   
                     X_list_head_attr.append([ei, ai])
                     y_list_head_attr.append([vi])
+
             if ej in dict_e2rv:
                 l_vals = dict_e2rv[ej]
                 for el in l_vals:
+                    aj = el[0] 
                     vj = el[1]
-                    aj = el[0]
                     X_list_tail_attr.append([ej, aj])
                     y_list_tail_attr.append([vj])
         # x ([e,a]) y([v])
@@ -169,54 +171,6 @@ class KGMTL_Data():
         y_tail_attr = np.array(y_list_tail_attr).reshape((len(X_list_tail_attr), 1))
         return X_head_attr, X_tail_attr, y_head_attr, y_tail_attr
     
-    def create_val_triple_data(self):
-        # dict_all_2_idx = {}
-        # dict_all_2_idx.update(self.dict_ent_2_idx)
-        # dict_all_2_idx.update(self.dict_rel_2_idx)
-
-        ## Construct positive instances
-        X_val_pos = np.empty([self.val_rel_data.shape[0], self.val_rel_data.shape[1]], dtype=int)
-        for i, el in enumerate(self.val_rel_data.values):
-            X_val_pos[i] = [self.dict_all_2_idx[el_] for el_ in el]
-        y_val_pos = np.ones((X_val_pos.shape[0],1))
-        ## create pos dict {ent_i:[ent_j...]}
-        list_val_ej = np.unique(X_val_pos[:,2])
-        dict_val_pos = dict()
-        for el in X_val_pos:
-            pos_s = el[0]
-            if not(pos_s in dict_val_pos):
-                dict_val_pos[pos_s] = [el[2]]
-            else:
-                l = dict_val_pos[pos_s]
-                l.append(el[2])
-                dict_val_pos[pos_s] = l
-        ### Construct negative instances        
-        dict_val_neg = dict()
-        all_val_rel = self.val_rel_data.p.unique().tolist()
-        neg_rel = self.dict_all_2_idx[random.choice(all_val_rel)]
-        for key in dict_val_pos:
-            list_neg_ins = list()
-            for i in range(100):
-                neg_ej = random.choice(list_val_ej)
-                if not(neg_rel in dict_val_pos[key]):
-                    list_neg_ins.append(neg_ej)
-                if len(list_neg_ins)==self.Ns:
-                    break
-            dict_val_neg[key] =list_neg_ins
-        
-        X_val_neg = np.empty([len(dict_val_neg)*self.Ns, self.val_rel_data.shape[1]], dtype=int)
-        k = 0
-        for key in dict_val_neg:
-            for i in range(self.Ns):
-                X_val_neg[k+i] = [key, neg_rel, dict_val_neg[key][i]]
-            k = k + self.Ns
-        y_val_neg = np.zeros((X_val_neg.shape[0],1))
-
-        ## Concatenate positive and negative instances
-        X_val_triplets = np.concatenate((X_val_pos, X_val_neg), axis=0)
-        y_val_triplets = np.concatenate((y_val_pos, y_val_neg), axis=0)
-        
-        return X_val_triplets, y_val_triplets # return X_val_neg, y_val_neg
 
 
     
@@ -255,23 +209,25 @@ class KGMTL_Data():
         
         return loader_triplets, loader_head_attr, loader_tail_attr
     
-    def test_dataset(self):
-        # test att data
-        #self.test_attri_data['map_e'] = self.test_attri_data['e'].map(self.dict_all_2_idx)
-        #self.test_attri_data['map_a'] = self.test_attri_data['a'].map(self.dict_all_2_idx)
-        test_data = self.test_attri_data[['map_e','map_a']].values
-        x_tensor_data = torch.from_numpy(test_data)
-        test_dataset =TensorDataset(x_tensor_data)
-        return test_dataset
 
 # class LitWD(Dataset):
-#     def __init___(self, triple_file, mode='train'):
-#         self.triples = pd.read_csv(triple_file, sep="\t")
-#         self.entities = self.triples[0].to_numpy()
-#         self.attributes = self.triples[1].to_numpy()
-#         self.value = self.triples[2].to_numpy(dtype=float)
-#         self.numlit_matirix = num_lit
-#         self.mode = mode
+#     def __init___(self, X_triplets, y_triplets, X_head_attr, y_head_attr, X_tail_attr, y_tail_attr, mode='train'):
+            # self.x_tensor_triplets = torch.from_numpy(X_triplets)
+            # self.y_tensor_triplets = torch.from_numpy(y_triplets)
+            ## data_triplets = TensorDataset(x_tensor_triplets, y_tensor_triplets)
+            ## loader_triplets = DataLoader(dataset=data_triplets, batch_size=batch_size, shuffle=True)
+            # ##
+            # self.x_tensor_head_attr = torch.from_numpy(X_head_attr)
+            # self.y_tensor_head_attr = torch.from_numpy(y_head_attr)
+            ## data_head_attr = TensorDataset(x_tensor_head_attr, y_tensor_head_attr)
+            ## loader_head_attr = DataLoader(dataset=data_head_attr, batch_size=batch_size, shuffle=True)
+            # ##
+            # self.x_tensor_tail_attr = torch.from_numpy(X_tail_attr)
+            # self.y_tensor_tail_attr = torch.from_numpy(y_tail_attr)
+            ## data_tail_attr = TensorDataset(x_tensor_tail_attr, y_tensor_tail_attr)
+            ## loader_tail_attr = DataLoader(dataset=data_tail_attr, batch_size=batch_size, shuffle=True)
+
+            # self.mode = mode
 
 #     def __getitem__(self, idx):
 #         self.sample = idx
