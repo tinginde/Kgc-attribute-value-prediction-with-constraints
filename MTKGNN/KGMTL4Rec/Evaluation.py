@@ -13,38 +13,46 @@ import argparse
 import os
 from Model import ER_MLP, KGMTL
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+import csv
+
+def evaluation(triple_loader, head_loader, tail_loader,device,mymodel=KGMTL):
+    pred_rel=[]; pred_head=[]; pred_tail=[]
+    #model.eval()
+    for x, y in triple_loader:                         # iterate through the dataloader
+        x = x.to(device)
+        with torch.no_grad(): 
+            pred_triple = mymodel.StructNet_forward(x[:,0], x[:,1], x[:,2])
+            pred_rel.append(pred_triple.detach().cpu())  
+ 
+    for x, y in head_loader:
+        x = x.to(device)
+        with torch.no_grad():
+            pred_att_h = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
+            pred_head.append(pred_att_h.detach().cpu())
 
 
-def make_train_step(model, loss_fn, loss_mse, optimizer):
-    # Builds function that performs a step in the train loop
-    def train_step_triplet(x, y):  
-        output1 = model.StructNet_forward(x[:,0], x[:,1], x[:,2])
-        loss_1 = loss_fn(output1, torch.reshape(y, (-1,1)))
-        return loss_1
-    def AttrNet_h_forward(x, y):   
-        output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
-        loss_2 = loss_mse(output2, torch.reshape(y.float(), (-1,1)))
-        return loss_2
-    def AttrNet_t_forward(x, y): 
-        output3 = model.AttrNet_t_forward(x[:,0], x[:,1])
-        loss_3 = loss_mse(output3, torch.reshape(y.float(), (-1,1)))
-        return loss_3
-    def param_update(loss):
-        loss.backward()
-        optimizer.step()
-        return loss.item()
-    # Returns the function that will be called inside the train loop
-    return train_step_triplet, AttrNet_h_forward, AttrNet_t_forward, param_update
+    for x, y in tail_loader:
+        x = x.to(device)
+        with torch.no_grad():
+            pred_att_t = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
+            pred_tail.append(pred_att_t.detach().cpu())
 
-# make new eval method for testing
-# need to create triples for testing(x_test_triples, x_head, x_tail)
-def predict(test_loader, model, device):
-    preds = []
-    for x in test_loader:
-        x = x.to(device)                        
-        with torch.no_grad():                   
-            pred = model(x[:,0],x[:,1])                     
-            preds.append(pred.detach().cpu())   
-    preds = torch.cat(preds, dim=0).numpy()  
-    return preds
+    preds_rel = torch.cat(pred_rel, dim=0).numpy()
+    preds_head = torch.cat(pred_head, dim=0).numpy()
+    preds_tail = torch.cat(pred_tail, dim=0).numpy()
+
+    return preds_rel, preds_head, preds_tail    
+
+def save_pred(preds, file):
+    ''' Save predictions to specified file '''
+    print('Saving results to {}'.format(file))
+    with open(file, 'w') as fp:
+        writer = csv.writer(fp)
+        writer.writerow(['idx', 'tested_pred'])
+        for i, p in enumerate(preds):
+            writer.writerow([i, p])
+    
+    
+
+
 
