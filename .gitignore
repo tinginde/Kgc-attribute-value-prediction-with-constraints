@@ -13,3 +13,4 @@ MTKGNN/KGMTL4Rec/__pycache__
 .vscode/settings.json
 predicted_result
 log
+MTKGNN/KGMTL4Rec/saved_model

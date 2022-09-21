@@ -94,7 +94,7 @@ class KGMTL(nn.Module):
         self.tahn = nn.Tanh()
         self.relu = nn.ReLU()
 
-        # self.loss_rel = nn.BCELoss()
+        self.loss_fn = nn.BCEWithLogitsLoss()
         self.criterion = nn.MSELoss()
 
         ### attr_net_left
@@ -149,13 +149,12 @@ class KGMTL(nn.Module):
         ''' Calculate loss '''
         # regularization_loss = 0
         # for param in self.parameters():
-        # # 使用L2正則項
-        # # regularization_loss += torch.sum(abs(param))
-        #     #regularization_loss += torch.sum(param ** 2)
-        #     return self.criterion(pred, target) + 0.00075 * regularization_loss
-        x_constraint = torch.tensor([x[i][0]*x[i][18] for i in range(len(x))])
-        x_constraint = x_constraint.to(device)          
-        return self.criterion(pred, target) + 0.00075 * regularization_loss
+        # # # 使用L2正則項
+        # # L1 regularization_loss += torch.sum(abs(param))
+        #     regularization_loss += torch.sum(param ** 2)
+        # x_constraint = torch.tensor([x[i][0]*x[i][18] for i in range(len(x))])
+        # x_constraint = x_constraint.to(device)          
+        return torch.sqrt(self.criterion(pred, target))
 
     def forward_AST(self):
         with open('LiterallyWikidata/files_needed/dict_a2ev.pickle', 'rb') as fr:
@@ -215,4 +214,4 @@ class KGMTL(nn.Module):
         pred_right = self.dropout(tail_att_net_fc1)  
 
 
-        return pred_left, pred_right, target
+        return pred_left.squeeze(2), pred_right.squeeze(2), target
