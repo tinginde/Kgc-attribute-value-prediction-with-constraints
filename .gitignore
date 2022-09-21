@@ -14,3 +14,5 @@ MTKGNN/KGMTL4Rec/__pycache__
 predicted_result
 log
 MTKGNN/KGMTL4Rec/saved_model
+AST_prediction
+nohup.out
