@@ -2,10 +2,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import numpy as np
+# For plotting
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
 import pandas as pd
 import random
-import tqdm
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 import pickle
 from torch.utils.data import Dataset, TensorDataset
@@ -20,18 +22,57 @@ from Data_Processing_copy_less import *
 # For plotting learning curve
 #from torch.utils.tensorboard import SummaryWriter
 
+def plot_learning_curve(loss_record, title=''):
+    ''' Plot learning curve of your DNN (train & dev loss) '''
+    total_steps = len(loss_record['att_h_train'])
+    x_1 = range(total_steps)
+    x_2 = x_1[::len(loss_record['att_h_train']) // len(loss_record['att_h_val'])]
+    figure(figsize=(6, 4))
+    plt.plot(x_1, loss_record['att_h_train'], c='tab:red', label='train')
+    plt.plot(x_2, loss_record['att_h_val'], c='tab:cyan', label='dev')
+    plt.ylim(0.0, 5.)
+    plt.xlabel('Training steps')
+    plt.ylabel('MSE loss')
+    plt.title('Learning curve of {}'.format(title))
+    plt.legend()
+    plt.show()
+
+
+def plot_pred(dv_set, model, device, lim=35., preds=None, targets=None):
+    ''' Plot prediction of your DNN '''
+    if preds is None or targets is None:
+        model.eval()
+        preds, targets = [], []
+        for x, y in dv_set:
+            x, y = x.to(device), y.to(device)
+            with torch.no_grad():
+                pred = model(x)
+                preds.append(pred.detach().cpu())
+                targets.append(y.detach().cpu())
+        preds = torch.cat(preds, dim=0).numpy()
+        targets = torch.cat(targets, dim=0).numpy()
+
+    figure(figsize=(5, 5))
+    plt.scatter(targets, preds, c='r', alpha=0.5)
+    plt.plot([-0.2, lim], [-0.2, lim], c='b')
+    plt.xlim(-0.2, lim)
+    plt.ylim(-0.2, lim)
+    plt.xlabel('ground truth value')
+    plt.ylabel('predicted value')
+    plt.title('Ground Truth v.s. Prediction')
+    plt.show()        
 
 def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=500)
+    parser.add_argument('-epochs', type=int, required=False, default=100)
     parser.add_argument('-batch_size', type=float, required=False, default=500
     )
-    parser.add_argument('-lr', type=float, required=False, default=10e-3)
+    parser.add_argument('-lr', type=float, required=False, default=0.001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
-    parser.add_argument('-emb_size', type=int, required=False, default=50)
-    parser.add_argument('-hidden_size', type=int, required=False, default=100)
+    parser.add_argument('-emb_size', type=int, required=False, default=100)
+    parser.add_argument('-hidden_size', type=int, required=False, default=64)
     parser.add_argument('-Ns', type=int, required=False, default=3)
     parser.add_argument('-device', type=str, required=False, default="cuda:0")
     parser.add_argument('-nb_hist', type=int, required=False, default=1)
@@ -74,8 +115,7 @@ def main():
     print(f'valid att set: {len(KGMTL_Data_local.valid_attri_data)}')
 
     # ## Define losses, optimizer
-    loss_fn = nn.BCEWithLogitsLoss()
-    loss_mse = nn.MSELoss()
+
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
     ## Load REL triples for task1
@@ -111,55 +151,59 @@ def main():
     X_test_tail_attr, y_test_tail_attr, batch_size, mode='test')
 
     ## Training the model
-    tr_loss = []
-    val_loss_fn = []
-    val_loss_mse = []
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    model.train() 
-    for epoch in tqdm.tqdm(range(epochs)):
-        loss_1_epoch = []; loss_2_epoch = []; loss_3_epoch = []; loss_4_ast= []
+    loss_record = {'rel_train':[],'rel_valid':[],'att_h_train':[],'att_t_train':[],'att_h_val':[],'att_t_val':[],'ast_train':[]}
+    best_mse = 10**10
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate) 
+    for epoch in range(epochs):
+        model.train() 
+        #loss_1_epoch = []; loss_2_epoch = []; loss_3_epoch = []; loss_4_ast= []
         for x_batch_triplets, y_batch_triplets in train_loader_triplets:
             optimizer.zero_grad()
             x,y= x_batch_triplets.to(device), y_batch_triplets.to(device)
             output1 = model.StructNet_forward(x[:,0], x[:,1], x[:,2])
-            loss_1 = loss_fn(output1, y)
+            loss_1 = model.loss_fn(output1, y)
             loss_1.backward()
             optimizer.step()
-            loss_1_epoch.append(loss_1.detach().cpu().item())
+            loss_record['rel_train'].append(loss_1.detach().cpu().item())
             ##
-        print('epoch {}, Struct Training loss {}'.format(epoch, np.mean(loss_1_epoch)))
+        
 
         for x_batch_head_attr, y_batch_head_attr in train_loader_head_attr:
             optimizer.zero_grad()
             x,y= x_batch_head_attr.to(device), y_batch_head_attr.to(device)
             output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
-            loss_2 = loss_mse(output2, torch.reshape(y.float(), (-1,1)))
+            loss_2 = model.cal_loss(output2, torch.reshape(y.float(), (-1,1)))
             loss_2.backward()
             optimizer.step()
-            loss_2_epoch.append(loss_2.detach().cpu().item())
+            loss_record['att_h_train'].append(loss_2.detach().cpu().item())
         ##
-        print('epoch {}, Head Reg Training loss {}'.format(epoch, np.mean(loss_2_epoch)))
+
         for x_batch_tail_attr, y_batch_tail_attr in train_loader_tail_attr:
             optimizer.zero_grad()
             x,y= x_batch_tail_attr.to(device), y_batch_tail_attr.to(device)
             output3 = model.AttrNet_h_forward(x[:,0], x[:,1])
-            loss_3 = loss_mse(output3, torch.reshape(y.float(), (-1,1)))
+            loss_3 = model.cal_loss(output3, torch.reshape(y.float(), (-1,1)))
             loss_3.backward()
             optimizer.step()
-            loss_3_epoch.append(loss_3.detach().cpu().item())
-        print('epoch {}, Tail Reg Training loss {}'.format(epoch, np.mean(loss_3_epoch)))
+            loss_record['att_t_train'].append(loss_3.detach().cpu().item())
+
 
         ## Total loss
-        print('epoch {}, SUM Training loss {}'.format(epoch, np.mean(loss_1_epoch) +  np.mean(loss_2_epoch) + np.mean(loss_3_epoch)))
-        tr_loss.append(np.mean(loss_1_epoch) +  np.mean(loss_2_epoch) + np.mean(loss_3_epoch) )
+        print('epoch {}, SUM Training loss {}'.format(epoch, np.mean(loss_record['rel_train']) +  np.mean(loss_record['att_h_train']) + np.mean(loss_record['att_t_train'])))
+
 
         for k in range(4):
             pred_left, pred_right, target = model.forward_AST()
-            loss_AST = loss_mse(pred_left, target) + loss_mse(pred_right, target)
+            loss_AST = model.cal_loss(pred_left, target) + model.cal_loss(pred_right, target)
             loss_AST.backward()
             optimizer.step()
-            loss_4_ast.append(loss_AST.detach().cpu().item())
-        print('epoch {}, AST loss {}'.format(epoch, np.mean(loss_4_ast)))
+            loss_record['ast_train'].append(loss_AST.detach().cpu().item())
+        print('epoch {}, training AST loss {}'.format(epoch, np.mean(loss_record['ast_train'])))
+        with open('AST_prediction', 'w') as fp:
+                writer = csv.writer(fp)
+                writer.writerow(['idx', 'ast_pred'])
+                for i, p in enumerate(pred_left.detach().cpu()):
+                    writer.writerow([i, p])
   
 
         model.eval()
@@ -167,30 +211,53 @@ def main():
             x, y = x.to(device), y.to(device) 
             with torch.no_grad(): 
                 pred_1 = model.StructNet_forward(x[:,0], x[:,1], x[:,2])
-                loss_1 = loss_fn(pred_1, y)
-            val_loss_fn.append(loss_1.detach().cpu().item()) 
-        print('epoch {}, Validation loss_rel {}'.format(epoch, np.mean(val_loss_fn)))
+                loss_1 = model.loss_fn(pred_1, y)
+            loss_record['rel_valid'].append(loss_1.detach().cpu().item())
+        print('epoch {}, Training loss_rel {}'.format(epoch, np.mean(loss_record['rel_train']))) 
+        print('epoch {}, Validation loss_rel {}'.format(epoch, np.mean(loss_record['rel_valid'])))
 
         for x, y in valid_loader_head_attr:
             x, y = x.to(device), y.to(device)
             with torch.no_grad():
                 pred_2 = model.AttrNet_h_forward(x[:,0], x[:,1])
-                loss_2 = loss_mse(pred_2, y)
-            val_loss_mse.append(loss_2.detach().cpu().item())
-        print('epoch {}, Validation loss_head {}'.format(epoch, np.mean(val_loss_mse)))
-        save_pred(val_loss_mse, 'predicted_result/valid_{}_{}_{}_preds_att_head.csv'.format(epochs,batch_size,emb_size)) 
- 
-        #保存權重
-        #torch.save(model.state_dict(),'KGMTL4Rec/saved_model/model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
-        model.train()
-    
+                loss_2 = model.cal_loss(pred_2, y)
+            loss_record['att_h_val'].append(loss_2.detach().cpu().item())
+        print('epoch {}, Training loss_head {}'.format(epoch, np.mean(loss_record['att_h_train'])))
+        print('epoch {}, Validation loss_head {}'.format(epoch, np.mean(loss_record['att_h_val'])))
+        #保存model
+        if np.mean(loss_record['att_h_val']) < best_mse: 
+            best_mse = np.mean(loss_record['att_h_val'])
+            print('Saving model (epoch = {:4d}, loss = {:.4f})'
+                .format(epoch , best_mse))
+            torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+
+        # for x, y in valid_loader_tail_attr:
+        #     x, y = x.to(device), y.to(device)
+        #     with torch.no_grad():
+        #         pred_2 = model.AttrNet_t_forward(x[:,0], x[:,1])
+        #         loss_2 = model.cal_loss(pred_2, y)
+        #     loss_record['att_t_val'].append(loss_2.detach().cpu().item())
+        # print('epoch {}, Tail Reg Training loss {}'.format(epoch, np.mean(loss_record['att_t_val'])))
+
+
+        #tr_loss.append(np.mean(loss_1_epoch) +  np.mean(loss_2_epoch) + np.mean(loss_3_epoch) )
+        save_pred(pred_2.detach().cpu(), 'predicted_result/valid_{}_{}_{}_preds_att_head.csv'.format(epochs,batch_size,emb_size)) 
+   
+        #保存model
+        # if loss_record['att_h_val'] < best_mse: 
+        #     print('Saving model (epoch = {:4d}, loss = {:.4f})'
+        #         .format(epoch, loss_record['att_h_val'])')
+        #     torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+    plot_learning_curve(loss_record, title='deep model')
     #test model
     # model.eval()
     # preds1, preds2, preds3 = evaluation(test_loader_triplets, test_loader_head_attr, test_loader_tail_attr, device , mymodel=model) 
     # # save_pred(preds1, 'predicted_result/epoch{}_preds_rel.csv'.format(epochs))
     # # save_pred(preds2, 'predicted_result/epoch{}_preds_att_head.csv'.format(epochs)) 
-    # # save_pred(preds3, 'predicted_result/epoch{}_preds_att_tail.csv'.format(epochs))        
+    # # save_pred(preds3, 'predicted_result/epoch{}_preds_att_tail.csv'.format(epochs))
+    # 
 
 if __name__ == '__main__':
-    main()    
+    main()
+
     
