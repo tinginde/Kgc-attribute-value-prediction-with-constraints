@@ -66,7 +66,7 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=100)
+    parser.add_argument('-epochs', type=int, required=False, default=1)
     parser.add_argument('-batch_size', type=float, required=False, default=500
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
@@ -171,8 +171,16 @@ def main():
         for x_batch_head_attr, y_batch_head_attr in train_loader_head_attr:
             optimizer.zero_grad()
             x,y= x_batch_head_attr.to(device), y_batch_head_attr.to(device)
+            ## todo constaint training
+            # x_constraint = torch.tensor([ (y[i] - x[i][0]*x[i][18]) ** 2 for i in range(len(x))])
+            x_constraint = torch.tensor([x[i][0]*x[i][21] for i in range(len(x))])
+            x_constraint = x_constraint.to(device)          
+
+            # criterion(pred,x_constraint)
+            # ((pred-x[0]*x[18])**2) 
             output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
-            loss_2 = model.cal_loss(output2, torch.reshape(y.float(), (-1,1)))
+            loss_2 = model.cal_loss(output2, y) + model.cal_loss(output2, x_constraint)
+            # loss_2 = model.cal_loss(output2, torch.reshape(y.float(), (-1,1)))
             loss_2.backward()
             optimizer.step()
             loss_record['att_h_train'].append(loss_2.detach().cpu().item())
