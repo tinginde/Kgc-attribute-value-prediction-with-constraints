@@ -241,7 +241,7 @@ def main():
 
 
         #tr_loss.append(np.mean(loss_1_epoch) +  np.mean(loss_2_epoch) + np.mean(loss_3_epoch) )
-        #save_pred(pred_2.detach().cpu(), 'predicted_result/valid_{}_{}_{}_preds_att_head.csv'.format(epochs,batch_size,emb_size)) 
+        save_pred(pred_2.detach().cpu(), 'predicted_result/valid_{}_{}_{}_preds_att_head.csv'.format(epochs,batch_size,emb_size)) 
    
         #保存model
         # if loss_record['att_h_val'] < best_mse: 
