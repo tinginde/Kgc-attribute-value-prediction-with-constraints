@@ -207,19 +207,4 @@ class KGMTL_Data():
         
         return loader_triplets, loader_head_attr, loader_tail_attr
 
-data = KGMTL_Data('LiterallyWikidata/',Ns=3)
-#要做dict:{el[0]:[attri,v],[attri,v]}
-dict_e2rv = dict()
-for el in data.attri_data.values:
-    attri = data.dict_all_2_idx[el[1]]
-    v = el[2]
-    e = data.dict_all_2_idx[el[0]]
-    if e in dict_e2rv:
-        l = dict_e2rv[e]
-        l.append([attri,v])
-        dict_e2rv[e] = l
-    else:
-        dict_e2rv[e] = [[attri,v]]
 
-with open('LiterallyWikidata/files_needed/dict_e2rv.pickle', 'wb') as f:
-            pickle.dump(dict_e2rv,f, protocol=pickle.HIGHEST_PROTOCOL)
