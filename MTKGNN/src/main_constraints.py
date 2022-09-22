@@ -67,7 +67,7 @@ def main():
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
     parser.add_argument('-epochs', type=int, required=False, default=1)
-    parser.add_argument('-batch_size', type=float, required=False, default=500
+    parser.add_argument('-batch_size', type=float, required=False, default=10000
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
@@ -150,6 +150,21 @@ def main():
     X_test_head_attr, y_test_head_attr, 
     X_test_tail_attr, y_test_tail_attr, batch_size, mode='test')
 
+    with open(ds_path+'files_needed/saved_all2idx.pkl', 'rb') as f:
+        dict_all_2_idx = pickle.load(f)
+    
+    ## constraint needed:
+    pop_idx = dict_all_2_idx['P1082']
+    gdp = dict_all_2_idx['P4010']
+    nominal_gdp = dict_all_2_idx['P2131']
+    nominal_gdp_per = dict_all_2_idx['P2132']
+    gdp_per = dict_all_2_idx['P2299']
+
+
+
+
+
+
     ## Training the model
     loss_record = {'rel_train':[],'rel_valid':[],'att_h_train':[],'att_t_train':[],'att_h_val':[],'att_t_val':[],'ast_train':[]}
     best_mse = 10**10
@@ -173,14 +188,28 @@ def main():
             x,y= x_batch_head_attr.to(device), y_batch_head_attr.to(device)
             ## todo constaint training
             # x_constraint = torch.tensor([ (y[i] - x[i][0]*x[i][18]) ** 2 for i in range(len(x))])
-            x_constraint = torch.tensor([x[i][0]*x[i][21] for i in range(len(x))])
-            x_constraint = x_constraint.to(device)          
-
+            # x_constraint = torch.tensor([x[i][0]*x[i][21] for i in range(len(x))])
+            # x_constraint = x_constraint.to(device)          
+            if gdp in x[:,1]:
+                #找到在batch的哪個idx
+                tri_idx = x[:,1].tolist().index(pop_idx)
+                y_v_pop = y[:,0][tri_idx].item()
+                print(tri_idx,y_v_pop)
+            # if (gdp in x[:,1] or nominal_gdp in x[:,1]) and (gdp_per in x[:,1] or nominal_gdp_per  in x[:,1]) :
+            #     gdp_idx = x[:,1].tolist().index(gdp)
+            #     gdp_per_idx = x[:,1].tolist().index(gdp_per)
+            #     n_gdp_idx = x[:,1].tolist().index(nominal_gdp)
+            #     no_gdp_per_idx = x[:,1].tolist().index(nominal_gdp_per)
+            #     y_v_gdp = y[:,0][gdp_idx].item()
+            #     y_v_ngdp = y[:,0][n_gdp_idx].item()
+            #     y_v_gdp_per = y[:,0][gdp_per_idx].item()
+            #     print(y_v_gdp_per)
+                #y_v_gdp_per = y[:,0][].item()
             # criterion(pred,x_constraint)
             # ((pred-x[0]*x[18])**2) 
             output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
-            loss_2 = model.cal_loss(output2, y) + model.cal_loss(output2, x_constraint)
-            # loss_2 = model.cal_loss(output2, torch.reshape(y.float(), (-1,1)))
+            #loss_2 = model.cal_loss(output2, y) + model.cal_loss(output2, x_constraint)
+            loss_2 = model.cal_loss(output2, torch.reshape(y.float(), (-1,1)))
             loss_2.backward()
             optimizer.step()
             loss_record['att_h_train'].append(loss_2.detach().cpu().item())
@@ -237,7 +266,7 @@ def main():
             best_mse = np.mean(loss_record['att_h_val'])
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
-            torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+            #torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
 
         # for x, y in valid_loader_tail_attr:
         #     x, y = x.to(device), y.to(device)

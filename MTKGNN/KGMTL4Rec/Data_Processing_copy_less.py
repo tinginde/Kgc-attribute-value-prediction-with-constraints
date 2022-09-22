@@ -9,16 +9,14 @@ import random
 import tqdm
 from torch.utils.data import DataLoader
 import pickle
-from torch.utils.data import Dataset, TensorDataset, random_split
+from torch.utils.data import Dataset, TensorDataset, random_split, SequentialSampler
 import argparse
 import os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 from Model import ER_MLP, KGMTL
 from Evaluation import *
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
-
-
+from sklearn.preprocessing import MinMaxScaler    
 
 class KGMTL_Data():
     
@@ -197,11 +195,13 @@ class KGMTL_Data():
             x_tensor_head_attr = torch.from_numpy(X_head_attr)
             y_tensor_head_attr = torch.from_numpy(y_head_attr)
             data_head_attr = TensorDataset(x_tensor_head_attr, y_tensor_head_attr)
+
             loader_head_attr = DataLoader(dataset=data_head_attr, batch_size=batch_size, shuffle=True)
             ##
             x_tensor_tail_attr = torch.from_numpy(X_tail_attr)
             y_tensor_tail_attr = torch.from_numpy(y_tail_attr)
             data_tail_attr = TensorDataset(x_tensor_tail_attr, y_tensor_tail_attr)
+
             loader_tail_attr = DataLoader(dataset=data_tail_attr, batch_size=batch_size, shuffle=True)
         
         return loader_triplets, loader_head_attr, loader_tail_attr
