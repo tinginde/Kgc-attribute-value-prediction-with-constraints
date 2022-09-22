@@ -192,9 +192,13 @@ def main():
             # x_constraint = x_constraint.to(device)          
             if gdp in x[:,1]:
                 #找到在batch的哪個idx
-                tri_idx = x[:,1].tolist().index(pop_idx)
+                tri_idx = x[:,1].tolist().index(gdp)
+                #data att
+                tri = x[:][tri_idx]
+                x_ent = x[:,0][tri_idx].item()                
+                #data value
                 y_v_pop = y[:,0][tri_idx].item()
-                print(tri_idx,y_v_pop)
+                print(tri, x_ent ,y_v_pop)
             # if (gdp in x[:,1] or nominal_gdp in x[:,1]) and (gdp_per in x[:,1] or nominal_gdp_per  in x[:,1]) :
             #     gdp_idx = x[:,1].tolist().index(gdp)
             #     gdp_per_idx = x[:,1].tolist().index(gdp_per)
