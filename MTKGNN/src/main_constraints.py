@@ -66,8 +66,8 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=1)
-    parser.add_argument('-batch_size', type=float, required=False, default=10000
+    parser.add_argument('-epochs', type=int, required=False, default=100)
+    parser.add_argument('-batch_size', type=float, required=False, default=500
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
@@ -153,6 +153,7 @@ def main():
     with open(ds_path+'files_needed/saved_all2idx.pkl', 'rb') as f:
         dict_all_2_idx = pickle.load(f)
     
+    
     ## constraint needed:
     pop_idx = dict_all_2_idx['P1082']
     gdp = dict_all_2_idx['P4010']
@@ -160,8 +161,8 @@ def main():
     nominal_gdp_per = dict_all_2_idx['P2132']
     gdp_per = dict_all_2_idx['P2299']
 
-
-
+    num_lit=np.load('LiterallyWikidata/files_needed/numerical_literals.npy')
+    
 
 
 
@@ -185,38 +186,31 @@ def main():
 
         for x_batch_head_attr, y_batch_head_attr in train_loader_head_attr:
             optimizer.zero_grad()
-            x,y= x_batch_head_attr.to(device), y_batch_head_attr.to(device)
+            x,y= x_batch_head_attr.to(device), y_batch_head_attr.to(device).float()
             ## todo constaint training
             # x_constraint = torch.tensor([ (y[i] - x[i][0]*x[i][18]) ** 2 for i in range(len(x))])
             # x_constraint = torch.tensor([x[i][0]*x[i][21] for i in range(len(x))])
-            # x_constraint = x_constraint.to(device)          
+            # x_constraint = x_constraint.to(device)
+            gold_gdp_mul_pop = torch.zeros((batch_size,1))
+
             if gdp in x[:,1]:
                 #找到在batch的哪個idx
                 tri_idx = x[:,1].tolist().index(gdp)
-                #data att
-                tri = x[:][tri_idx]
-                x_ent = x[:,0][tri_idx].item()                
-                #data value
-                y_v_pop = y[:,0][tri_idx].item()
-                print(tri, x_ent ,y_v_pop)
-            # if (gdp in x[:,1] or nominal_gdp in x[:,1]) and (gdp_per in x[:,1] or nominal_gdp_per  in x[:,1]) :
-            #     gdp_idx = x[:,1].tolist().index(gdp)
-            #     gdp_per_idx = x[:,1].tolist().index(gdp_per)
-            #     n_gdp_idx = x[:,1].tolist().index(nominal_gdp)
-            #     no_gdp_per_idx = x[:,1].tolist().index(nominal_gdp_per)
-            #     y_v_gdp = y[:,0][gdp_idx].item()
-            #     y_v_ngdp = y[:,0][n_gdp_idx].item()
-            #     y_v_gdp_per = y[:,0][gdp_per_idx].item()
-            #     print(y_v_gdp_per)
-                #y_v_gdp_per = y[:,0][].item()
-            # criterion(pred,x_constraint)
-            # ((pred-x[0]*x[18])**2) 
-            output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
-            #loss_2 = model.cal_loss(output2, y) + model.cal_loss(output2, x_constraint)
-            loss_2 = model.cal_loss(output2, torch.reshape(y.float(), (-1,1)))
-            loss_2.backward()
-            optimizer.step()
-            loss_record['att_h_train'].append(loss_2.detach().cpu().item())
+                #gold y :gdp_per*pop
+                e = x[:,0][tri_idx].item()
+                gold_pop = num_lit[e][dict_all_2_idx['P1082']]
+                gold_gdp_per = num_lit[e][dict_all_2_idx['P2299']]
+                ans = gold_pop * gold_gdp_per
+                y_criterion = y
+                y_criterion[tri_idx]=float(ans)
+                #gold_gdp_mul_pop[tri_idx] = float(ans)
+                y = y_criterion.to(device)
+                output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
+                loss_2 = model.cal_loss(output2, y_criterion)
+                #loss_2 = model.cal_loss(output2, y) + model.cal_loss(output2, gold_gdp_mul_pop)
+                loss_2.backward()
+                optimizer.step()
+                loss_record['att_h_train'].append(loss_2.detach().cpu().item())
         ##
 
         for x_batch_tail_attr, y_batch_tail_attr in train_loader_tail_attr:
@@ -270,7 +264,11 @@ def main():
             best_mse = np.mean(loss_record['att_h_val'])
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
-            #torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+            torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/Cons_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+
+    print(loss_record)
+    # with open('loss_record_cons.pickle','wb') as fw:
+    #     pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
 
         # for x, y in valid_loader_tail_attr:
         #     x, y = x.to(device), y.to(device)
@@ -282,14 +280,14 @@ def main():
 
 
         #tr_loss.append(np.mean(loss_1_epoch) +  np.mean(loss_2_epoch) + np.mean(loss_3_epoch) )
-        save_pred(pred_2.detach().cpu(), 'predicted_result/valid_{}_{}_{}_preds_att_head.csv'.format(epochs,batch_size,emb_size)) 
+        #save_pred(pred_2.detach().cpu(), 'predicted_result/valid_{}_{}_{}_preds_att_head.csv'.format(epochs,batch_size,emb_size)) 
    
         #保存model
         # if loss_record['att_h_val'] < best_mse: 
         #     print('Saving model (epoch = {:4d}, loss = {:.4f})'
         #         .format(epoch, loss_record['att_h_val'])')
         #     torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
-    plot_learning_curve(loss_record, title='deep model')
+    #plot_learning_curve(loss_record, title='deep model')
     #test model
     # model.eval()
     # preds1, preds2, preds3 = evaluation(test_loader_triplets, test_loader_head_attr, test_loader_tail_attr, device , mymodel=model) 

@@ -197,7 +197,7 @@ class KGMTL_Data():
             y_tensor_head_attr = torch.from_numpy(y_head_attr)
             data_head_attr = TensorDataset(x_tensor_head_attr, y_tensor_head_attr)
 
-            loader_head_attr = DataLoader(dataset=data_head_attr, batch_size=batch_size, shuffle=True)
+            loader_head_attr = DataLoader(dataset=data_head_attr, batch_size=batch_size, shuffle=True,drop_last=True)
             ##
             x_tensor_tail_attr = torch.from_numpy(X_tail_attr)
             y_tensor_tail_attr = torch.from_numpy(y_tail_attr)
