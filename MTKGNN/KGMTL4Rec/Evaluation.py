@@ -16,32 +16,53 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 import csv
 
 def evaluation(triple_loader, head_loader, tail_loader,device,mymodel=KGMTL):
-    pred_rel=[]; pred_head=[]; pred_tail=[]
+    pred_rel=[]; pred_head=[]; pred_tail=[]; target_head=[]; ent=[]
     #model.eval()
     for x, y in triple_loader:                         # iterate through the dataloader
         x = x.to(device)
         with torch.no_grad(): 
             pred_triple = mymodel.StructNet_forward(x[:,0], x[:,1], x[:,2])
-            pred_rel.append(pred_triple.detach().cpu())  
+            pred_rel.append(pred_triple.detach().cpu()) 
+            target_rel = y[:,0] 
  
     for x, y in head_loader:
         x = x.to(device)
         with torch.no_grad():
             pred_att_h = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
             pred_head.append(pred_att_h.detach().cpu())
+            preds_head = torch.cat(pred_head,0).numpy()            
+            target_head.append(y)
+            targets_head = torch.cat(target_head,0).numpy()
+            # ent.append(x[:,0])
+            # evs= torch.cat(ent,0).numpy()
+    #print('from eval.py',preds_head, sep='\t')
+    table = np.concatenate((preds_head, targets_head),axis=1)
+
+    # save result 
+    with open('test_result_h', 'w') as fp:
+        writer = csv.writer(fp)
+        writer.writerow(['idx','pred_h','target_h'])
+        for i, [p,t] in enumerate(table[:]):
+            writer.writerow([i, p, t])
 
 
-    for x, y in tail_loader:
-        x = x.to(device)
-        with torch.no_grad():
-            pred_att_t = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
-            pred_tail.append(pred_att_t.detach().cpu())
+    # for x, y in tail_loader:
+    #     x = x.to(device)
+    #     with torch.no_grad():
+    #         pred_att_t = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
+    #         pred_tail.append(pred_att_t.detach().cpu())
+    #         target_tail=y[:,0]
 
-    preds_rel = torch.cat(pred_rel, dim=0).numpy()
-    preds_head = torch.cat(pred_head, dim=0).numpy()
-    preds_tail = torch.cat(pred_tail, dim=0).numpy()
+    # preds_rel = torch.cat(pred_rel, dim=0).numpy()
+    # preds_head = torch.cat(pred_head, dim=0).numpy()
+    # preds_tail = torch.cat(pred_tail, dim=0).numpy()
 
-    return preds_rel, preds_head, preds_tail    
+    # targets_rel = torch.cat(target_rel, dim=0).numpy()
+    # targets_head = torch.cat(target_head, dim=0).numpy()
+    # targets_tail = torch.cat(target_tail, dim=0).numpy()
+
+
+    #return preds_rel, preds_head, preds_tail 
 
 def save_pred(preds, file):
     ''' Save predictions to specified file '''
