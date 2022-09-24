@@ -156,17 +156,17 @@ class KGMTL(nn.Module):
         # x_constraint = x_constraint.to(device)          
         return torch.sqrt(self.criterion(pred, target))
 
-    def forward_AST(self):
+    def forward_AST(self,batch_size):
         with open('LiterallyWikidata/files_needed/dict_a2ev.pickle', 'rb') as fr:
             dict_a2ev = pickle.load(fr)
         # ramdomly choose an atrribute (and no repeated index number)
         # output would be like: tensor([139, 101,  78, 151, 161,  71,  40, 126,   8,  96])
         weights = torch.ones(self.num_attributes)
-        idxs_attr = torch.multinomial(weights, num_samples=87, replacement=False)
+        idxs_attr = torch.multinomial(weights, num_samples=batch_size, replacement=True)
         
         # random sample a batch containing e, v with the same attri 
         att_np = idxs_attr.numpy()
-        ev_list = [random.sample(dict_a2ev[att_np[i]],87) for i in range(len(att_np))]
+        ev_list = [random.sample(dict_a2ev[att_np[i]],100) for i in range(len(att_np))]
 
         # making idxs_ent
         idxs_ent=[]
@@ -177,15 +177,16 @@ class KGMTL(nn.Module):
                 idxs_ent.append(batch_ev[j][0])
                 target.append(batch_ev[j][1])
         # list to numpy and reshape
-        idxs_ent= np.array(idxs_ent).reshape((87,-1))      
+        idxs_ent= np.array(idxs_ent).reshape((batch_size,-1))      
         # change to tensor form
         ent_tensor = torch.from_numpy(idxs_ent).to(device)
         # resize att tensor
-        att_np = att_np.reshape(87,-1)
-        att_np_ts = np.repeat(att_np,87,axis = 1)
+        att_np = att_np.reshape(batch_size,-1)
+        # repeat idx_att 100 times to fit the input form
+        att_np_ts = np.repeat(att_np,100,axis = 1)
         att_tensor = torch.from_numpy(att_np_ts).to(device)
         #idxs_attr = idxs_attr.view(87,-1).to(device)
-        target = np.array(target).reshape(87,-1)
+        target = np.array(target).reshape(batch_size,-1)
         target = torch.from_numpy(target).float().to(device)
         # attr_emb = self.att_embeddings(idxs_attr)
         # ent_emb = self.ent_embeddings(ent_tensor)
