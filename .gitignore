@@ -13,7 +13,13 @@ MTKGNN/KGMTL4Rec/__pycache__
 .vscode/settings.json
 predicted_result
 log
-MTKGNN/KGMTL4Rec/saved_model
 AST_prediction
 nohup.out
 MTKGNN/KGMTL4Rec/pre_saved_model
+cache
+MTKGNN/src/main_mlp.py
+LiterallyWikidata/files_needed/check_all2idx.py
+MTKGNN/KGMTL4Rec/cons2_saved_model
+MTKGNN/KGMTL4Rec/wei_saved_model
+MTKGNN/KGMTL4Rec/saved_model
+loss_record
