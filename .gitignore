@@ -16,3 +16,4 @@ log
 MTKGNN/KGMTL4Rec/saved_model
 AST_prediction
 nohup.out
+MTKGNN/KGMTL4Rec/pre_saved_model
