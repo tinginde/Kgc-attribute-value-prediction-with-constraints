@@ -6,7 +6,7 @@ sys.path.append('./MTKGNN/KGMTL4Rec')
 sys.path.append('./LiterallyWikidata')
 from Data_Processing_copy_less import KGMTL_Data
 from Model import KGMTL
-from Evaluation import evaluation, save_pred
+from Evaluation import evaluation, save_result
 
 config={'batch_size': 500, 'epochs':500}
 
@@ -84,7 +84,8 @@ X_test_tail_attr, y_test_tail_attr, config['batch_size'], mode='test')
 
 #test model
 model.eval()
-evaluation(test_loader_triplets, test_loader_head_attr, test_loader_tail_attr, device , mymodel=model) 
+table = evaluation(test_loader_triplets, test_loader_head_attr, test_loader_tail_attr, device , mymodel=model) 
+save_result(table, 'predicted_result/tmodel_epoch{}_preds_att_head.csv'.format(config['epochs']))
 #save_pred(preds1, 'predicted_result/test_cons_epoch{}_preds_rel.csv'.format(config['epochs']))
 #save_pred(preds2, 'predicted_result/test_cons_epoch{}_preds_att_head.csv'.format(config['epochs'])) 
 #save_pred(preds3, 'predicted_result/test_cons_epoch{}_preds_att_tail.csv'.format(config['epochs']))
