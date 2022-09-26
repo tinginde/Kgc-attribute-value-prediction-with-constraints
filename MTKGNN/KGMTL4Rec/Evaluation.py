@@ -15,8 +15,8 @@ from Model import ER_MLP, KGMTL
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 import csv
 
-def evaluation(triple_loader, head_loader, tail_loader,device,mymodel=KGMTL):
-    pred_rel=[]; pred_head=[]; pred_tail=[]; target_head=[]; ent=[]
+def evaluation(triple_loader, head_loader, tail_loader,device,mymodel):
+    pred_rel=[]; pred_head=[]; pred_tail=[]; target_head=[]; ent=[]; attr=[]
     #model.eval()
     for x, y in triple_loader:                         # iterate through the dataloader
         x = x.to(device)
@@ -30,20 +30,18 @@ def evaluation(triple_loader, head_loader, tail_loader,device,mymodel=KGMTL):
         with torch.no_grad():
             pred_att_h = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
             pred_head.append(pred_att_h.detach().cpu())
-            preds_head = torch.cat(pred_head,0).numpy()            
             target_head.append(y)
-            targets_head = torch.cat(target_head,0).numpy()
-            # ent.append(x[:,0])
-            # evs= torch.cat(ent,0).numpy()
+            ent.append(x[:,0].detach().cpu())
+            attr.append(x[:,1].detach().cpu())
+    preds_head = torch.cat(pred_head,0).numpy() 
+    targets_head = torch.cat(target_head,0).numpy()
+    attrs= torch.cat(attr,0).numpy().reshape((-1,1))
+    evs= torch.cat(ent,0).numpy().reshape((-1,1))
     #print('from eval.py',preds_head, sep='\t')
-    table = np.concatenate((preds_head, targets_head),axis=1)
+    #return preds_head, targets_head
+    table = np.concatenate((evs, attrs, preds_head, targets_head),axis=1)
+    return table 
 
-    # save result 
-    with open('test_result_h', 'w') as fp:
-        writer = csv.writer(fp)
-        writer.writerow(['idx','pred_h','target_h'])
-        for i, [p,t] in enumerate(table[:]):
-            writer.writerow([i, p, t])
 
 
     # for x, y in tail_loader:
@@ -64,14 +62,21 @@ def evaluation(triple_loader, head_loader, tail_loader,device,mymodel=KGMTL):
 
     #return preds_rel, preds_head, preds_tail 
 
-def save_pred(preds, file):
+def save_result(eval_result, file):
     ''' Save predictions to specified file '''
     print('Saving results to {}'.format(file))
+    # with open(file, 'w') as fp:
+    #     writer = csv.writer(fp)
+    #     writer.writerow(['idx', 'tested_pred'])
+    #     for i, p in enumerate(preds):
+    #         writer.writerow([i, p])
+
+    # save result 
     with open(file, 'w') as fp:
         writer = csv.writer(fp)
-        writer.writerow(['idx', 'tested_pred'])
-        for i, p in enumerate(preds):
-            writer.writerow([i, p])
+        writer.writerow(['idx','e','a','pred_h','target_h'])
+        for i, [e,a,p,t] in enumerate(eval_result[:]):
+            writer.writerow([i, e, a, p, t])
     
     
 

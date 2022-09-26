@@ -66,7 +66,7 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=100)
+    parser.add_argument('-epochs', type=int, required=False, default=500)
     parser.add_argument('-batch_size', type=float, required=False, default=500
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
@@ -160,6 +160,14 @@ def main():
     nominal_gdp = dict_all_2_idx['P2131']
     nominal_gdp_per = dict_all_2_idx['P2132']
     gdp_per = dict_all_2_idx['P2299']
+    date_of_birth = dict_all_2_idx['P569']
+    date_of_death = dict_all_2_idx['P570']
+    # net_profit = dict_all_2_idx['P2295']
+    # retirement_age = dict_all_2_idx['P3001']
+    # age_of_majority = dict_all_2_idx['P2997']
+    # work_start = dict_all_2_idx['P2031']
+    # work_end = dict_all_2_idx['P2032']
+
 
     num_lit=np.load('LiterallyWikidata/files_needed/numerical_literals.npy')
     
@@ -211,6 +219,63 @@ def main():
                 loss_2.backward()
                 optimizer.step()
                 loss_record['att_h_train'].append(loss_2.detach().cpu().item())
+
+            if date_of_death in x[:,1]:
+                #找到在batch的哪個idx
+                tri_idx = x[:,1].tolist().index(date_of_death)
+                #gold y :gdp_per*pop
+                e = x[:,0][tri_idx].item()
+                gold_date_of_birth = num_lit[e][dict_all_2_idx['P569']]
+                
+                output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
+
+                age = output2 - gold_date_of_birth
+                ans = 100
+                y_criterion = y
+
+                
+                y_criterion[tri_idx][age[tri_idx] > 100]=float(ans)
+
+                y_criterion[tri_idx][age[tri_idx] <= 100]=float(age[tri_idx])
+
+            
+            # if net_profit in x[:,1]:
+            #     #找到在batch的哪個idx
+            #     tri_idx = x[:,1].tolist().index(net_profit)
+            #     #gold y :gdp_per*pop
+            #     e = x[:,0][tri_idx].item()
+
+
+            #     gold_total_revenue = num_lit[e][dict_all_2_idx['P2139']]
+            #     gold_total_expenditure = num_lit[e][dict_all_2_idx['P2402']]
+            #     ans = gold_total_revenue - gold_total_expenditure
+            #     y_criterion = y
+            #     y_criterion[tri_idx]=float(ans)
+            #     #gold_gdp_mul_pop[tri_idx] = float(ans)
+            #     y = y_criterion.to(device)
+            #     output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
+            #     loss_2 = model.cal_loss(output2, y_criterion)
+            #     #loss_2 = model.cal_loss(output2, y) + model.cal_loss(output2, gold_gdp_mul_pop)
+            #     loss_2.backward()
+            #     optimizer.step()
+            #     loss_record['att_h_train'].append(loss_2.detach().cpu().item())
+
+
+                
+               
+            #     #gold_gdp_mul_pop[tri_idx] = float(ans)
+            #     y = y_criterion.to(device)
+            #     output2 = model.AttrNet_h_forward(x[:,0], x[:,1])
+            #     loss_2 = model.cal_loss(output2, y_criterion)
+            #     #loss_2 = model.cal_loss(output2, y) + model.cal_loss(output2, gold_gdp_mul_pop)
+            #     loss_2.backward()
+            #     optimizer.step()
+            #     loss_record['att_h_train'].append(loss_2.detach().cpu().item())
+            
+            
+            
+
+
         ##
 
         for x_batch_tail_attr, y_batch_tail_attr in train_loader_tail_attr:
@@ -234,11 +299,11 @@ def main():
             optimizer.step()
             loss_record['ast_train'].append(loss_AST.detach().cpu().item())
         print('epoch {}, training AST loss {}'.format(epoch, np.mean(loss_record['ast_train'])))
-        with open('AST_prediction', 'w') as fp:
-                writer = csv.writer(fp)
-                writer.writerow(['idx', 'ast_pred'])
-                for i, p in enumerate(pred_left.detach().cpu()):
-                    writer.writerow([i, p])
+        # with open('AST_prediction', 'w') as fp:
+        #         writer = csv.writer(fp)
+        #         writer.writerow(['idx', 'ast_pred'])
+        #         for i, p in enumerate(pred_left.detach().cpu()):
+        #             writer.writerow([i, p])
   
 
         model.eval()
@@ -264,24 +329,13 @@ def main():
             best_mse = np.mean(loss_record['att_h_val'])
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
-            torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/Cons_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+            torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/wei_saved_model/Cons_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
 
-    print(loss_record)
-    # with open('loss_record_cons.pickle','wb') as fw:
-    #     pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
-
-        # for x, y in valid_loader_tail_attr:
-        #     x, y = x.to(device), y.to(device)
-        #     with torch.no_grad():
-        #         pred_2 = model.AttrNet_t_forward(x[:,0], x[:,1])
-        #         loss_2 = model.cal_loss(pred_2, y)
-        #     loss_record['att_t_val'].append(loss_2.detach().cpu().item())
-        # print('epoch {}, Tail Reg Training loss {}'.format(epoch, np.mean(loss_record['att_t_val'])))
+    #print(loss_record)
+    with open('wei_loss_record_cons.pickle','wb') as fw:
+        pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
 
 
-        #tr_loss.append(np.mean(loss_1_epoch) +  np.mean(loss_2_epoch) + np.mean(loss_3_epoch) )
-        #save_pred(pred_2.detach().cpu(), 'predicted_result/valid_{}_{}_{}_preds_att_head.csv'.format(epochs,batch_size,emb_size)) 
-   
         #保存model
         # if loss_record['att_h_val'] < best_mse: 
         #     print('Saving model (epoch = {:4d}, loss = {:.4f})'

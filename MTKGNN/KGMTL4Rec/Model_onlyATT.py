@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
-from torch.nn 
+from torch.nn import functional as F, Parameter
+from itertools import chain
 import random
 import pickle
 import numpy as np
@@ -33,8 +34,6 @@ class ER_MLP(nn.Module):
         self.hidden_fc_2 = nn.Linear(int(hidden_size/2), 1)
         #
         self.dropout = nn.Dropout(0.2)
-
-        self.loss_fn = nn.BCEWithLogitsLoss()
         ##        
     def forward(self, h, r, t):
         # add hidden layer, with relu activation function
@@ -113,18 +112,18 @@ class KGMTL(nn.Module):
         #self.rh = nn.Linear(emb_size * 2, hidden_size, bias = False) 
 
 
-    def StructNet_forward(self, h, r, t):
-        ## 1st Part of KGMTL4REC -> StructNet
-        # x_h, x_r and x_t are the embeddings 
-        x_h = self.ent_embeddings(h)
-        x_r = self.rel_embeddings(r)
-        x_t = self.ent_embeddings(t)
-        # # Mh, Mr, Mt are the h,r,t hidden layers 
-        # ## hidden_struct_net_fc1 is the struct net hidden layer
-        struct_net_fc1 = self.relu(self.hidden_struct_net_fc(self.Mh(x_h) + self.Mr(x_r) + self.Mt(x_t)))
-        pred1 = self.dropout(struct_net_fc1)
+    # def StructNet_forward(self, h, r, t):
+    #     ## 1st Part of KGMTL4REC -> StructNet
+    #     # x_h, x_r and x_t are the embeddings 
+    #     x_h = self.ent_embeddings(h)
+    #     x_r = self.rel_embeddings(r)
+    #     x_t = self.ent_embeddings(t)
+    #     # # Mh, Mr, Mt are the h,r,t hidden layers 
+    #     # ## hidden_struct_net_fc1 is the struct net hidden layer
+    #     struct_net_fc1 = self.relu(self.hidden_struct_net_fc(self.Mh(x_h) + self.Mr(x_r) + self.Mt(x_t)))
+    #     pred1 = self.dropout(struct_net_fc1)
 
-        return pred1
+    #     return pred1
     
     def AttrNet_h_forward(self, h, ah):
         ## 2nd part of KGMTL4REC -> AttrNet for head entity
