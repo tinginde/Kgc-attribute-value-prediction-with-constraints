@@ -293,7 +293,7 @@ def main():
 
 
         for k in range(4):
-            pred_left, pred_right, target = model.forward_AST()
+            pred_left, pred_right, target = model.forward_AST(batch_size)
             loss_AST = model.cal_loss(pred_left, target) + model.cal_loss(pred_right, target)
             loss_AST.backward()
             optimizer.step()
