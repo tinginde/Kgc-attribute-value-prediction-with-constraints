@@ -29,7 +29,8 @@ class KGMTL_Data():
         self.test_rel_data = pd.read_csv(ds_path + 'LitWD48K/test.txt', sep='\t', names=['s', 'p', 'o'])
         
         ## Load Data for Attnet
-        self.attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_final_ver04', sep='\t')
+        attri_data = pd.read_csv(ds_path + 'files_needed/nogeo_a89')
+        self.attri_data = attri_data[['e','a','std_v']]
         #self.attri_data = attri_data.to_numpy() 
 #       self.attri_data = self.attri_data.sample(frac=0.5, random_state=42)
         self.train_attri_data, valid_attri_data = train_test_split(self.attri_data, test_size=0.2,stratify=self.attri_data['a'],
@@ -43,21 +44,21 @@ class KGMTL_Data():
         self.relations = pd.read_csv(ds_path + 'Relations/relation_labels_en.txt', sep='\t', names=['label', 'name'])
         self.attributes = self.attri_data['a'].unique()
 
-        ## Dict Entites and relations
-        # look like{ent:idx,rel:idx,att:idx}
-        # self.dict_ent_2_idx = dict(zip(self.entities['label'], np.arange(0, len(self.entities), 1)))
-        # self.dict_rel_2_idx = dict(zip(self.relations['label'], np.arange(0, len(self.relations), 1)))
-        # self.dict_att_2_idx = dict(zip(self.attributes, np.arange(0, len(self.attributes), 1)))
+        # Dict Entites and relations
+        #look like{ent:idx,rel:idx,att:idx}
+        self.dict_ent_2_idx = dict(zip(self.entities['label'], np.arange(0, len(self.entities), 1)))
+        self.dict_rel_2_idx = dict(zip(self.relations['label'], np.arange(0, len(self.relations), 1)))
+        self.dict_att_2_idx = dict(zip(self.attributes, np.arange(0, len(self.attributes), 1)))
 
-        # ## Dict contains all Graph objects
-        # self.dict_all_2_idx = {}
-        # self.dict_all_2_idx.update(self.dict_ent_2_idx)
-        # self.dict_all_2_idx.update(self.dict_rel_2_idx)
-        # self.dict_all_2_idx.update(self.dict_att_2_idx)
-        #self.dict_all_2_idx = np.load(ds_path+'files_needed/dict_all_2_idx.npy',allow_pickle=True).item()
+        ## Dict contains all Graph objects
+        self.dict_all_2_idx = {}
+        self.dict_all_2_idx.update(self.dict_ent_2_idx)
+        self.dict_all_2_idx.update(self.dict_rel_2_idx)
+        self.dict_all_2_idx.update(self.dict_att_2_idx)
         
-        with open(ds_path+'files_needed/saved_all2idx.pkl', 'rb') as f:
-            self.dict_all_2_idx = pickle.load(f)
+        
+        # with open(ds_path+'files_needed/saved_all2idx.pkl', 'rb') as f:
+        #     self.dict_all_2_idx = pickle.load(f)
 
 
 # create data for train and valid 

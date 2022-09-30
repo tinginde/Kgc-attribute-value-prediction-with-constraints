@@ -21,12 +21,12 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=2000)
+    parser.add_argument('-epochs', type=int, required=False, default=20)
     parser.add_argument('-batch_size', type=float, required=False, default=500
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
-    parser.add_argument('-emb_size', type=int, required=False, default=100)
+    parser.add_argument('-emb_size', type=int, required=False, default=128)
     parser.add_argument('-hidden_size', type=int, required=False, default=64)
     parser.add_argument('-Ns', type=int, required=False, default=3)
     parser.add_argument('-device', type=str, required=False, default="cuda:0")
@@ -147,18 +147,18 @@ def main():
         print('epoch {}, SUM Training loss {}'.format(epoch, np.mean(loss_record['rel_train']) +  np.mean(loss_record['att_h_train']) + np.mean(loss_record['att_t_train'])))
 
 
-        for k in range(4):
-            pred_left, pred_right, target = model.forward_AST(batch_size)
-            loss_AST = model.cal_loss(pred_left, target) + model.cal_loss(pred_right, target)
-            loss_AST.backward()
-            optimizer.step()
-            loss_record['ast_train'].append(loss_AST.detach().cpu().item())
-        print('epoch {}, training AST loss {}'.format(epoch, np.mean(loss_record['ast_train'])))
-        # with open('AST_prediction', 'w') as fp:
-        #         writer = csv.writer(fp)
-        #         writer.writerow(['idx', 'ast_pred'])
-        #         for i, p in enumerate(pred_left.detach().cpu()):
-        #             writer.writerow([i, p])
+        # for k in range(4):
+        #     pred_left, pred_right, target = model.forward_AST(batch_size)
+        #     loss_AST = model.cal_loss(pred_left, target) + model.cal_loss(pred_right, target)
+        #     loss_AST.backward()
+        #     optimizer.step()
+        #     loss_record['ast_train'].append(loss_AST.detach().cpu().item())
+        # print('epoch {}, training AST loss {}'.format(epoch, np.mean(loss_record['ast_train'])))
+        # # with open('AST_prediction', 'w') as fp:
+        # #         writer = csv.writer(fp)
+        # #         writer.writerow(['idx', 'ast_pred'])
+        # #         for i, p in enumerate(pred_left.detach().cpu()):
+        # #             writer.writerow([i, p])
   
 
         model.eval()
@@ -186,10 +186,10 @@ def main():
                 .format(epoch , best_mse))
             
             torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/ast_model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+            
 
-
-        with open('loss_record/ast_model_{}_{}_{}.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
-             pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
+        #with open('loss_record/ast_model_{}_{}_{}.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
+        #     pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
         # for x, y in valid_loader_tail_attr:
         #     x, y = x.to(device), y.to(device)
         #     with torch.no_grad():
