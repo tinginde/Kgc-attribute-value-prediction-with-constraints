@@ -101,7 +101,6 @@ We have three kinds of datasets:
 attri_data = pd.read_csv('LiterallyWikidata/files_needed/numeric_literals_ver06')
 
 x = attri_data.loc[:,['e','a']].to_numpy()
-print(x[:10])
 ## constraint needed:
 # pop_idx = dict_all_2_idx['P1082']
 # gdp = dict_all_2_idx['P4010']
