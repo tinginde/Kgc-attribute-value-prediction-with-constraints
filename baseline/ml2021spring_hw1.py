@@ -101,7 +101,6 @@ We have three kinds of datasets:
 attri_data = pd.read_csv('LiterallyWikidata/files_needed/numeric_literals_ver06')
 
 x = attri_data.loc[:,['e','a']].to_numpy()
-print(x[:10])
 ## constraint needed:
 # pop_idx = dict_all_2_idx['P1082']
 # gdp = dict_all_2_idx['P4010']
@@ -126,7 +125,6 @@ with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
 ## Preparing ent embedding
 ent2idx = {e:i for i,e in enumerate(list_ent_ids)}
 attri_data['ent_idx']= attri_data['e'].map(ent2idx)
-print(ent2idx(x[0]))
 embedding_e = torch.nn.Embedding.from_pretrained(emb_ent)
 input_e = torch.LongTensor(attri_data['ent_idx'].to_numpy())
 
@@ -153,10 +151,10 @@ os.makedirs('models', exist_ok=True)  # The trained model will be saved to ./mod
 
 # TODO: How to tune these hyper-parameters to improve your model's performance?
 config = {
-    'n_epochs': 25,                # maximum number of epochs
+    'n_epochs': 500,                # maximum number of epochs
     'batch_size': 200,               # mini-batch size for dataloader
     'learning_rate':0.001,
-    'early_stop': 3,               # early stopping epochs (the number epochs since your model's last improvement)
+    'early_stop': 15,               # early stopping epochs (the number epochs since your model's last improvement)
     'save_path': 'models/model.pth' , # your model will be saved here
 }
 
@@ -226,10 +224,15 @@ class NeuralNet(nn.Module):
         # TODO: How to modify this model to achieve better performance?
         self.net = nn.Sequential(
             nn.Linear(input_dim, 100),
-            nn.ReLU(),
+            nn.Tanh(),
+            nn.Dropout(0.5),
+            nn.Linear(100, 100),
+            nn.Tanh(),
+            nn.Dropout(0.5),
             nn.Linear(100, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Tanh(),
+            nn.Dropout(0.5),
+            nn.Linear(64, 1),
         )
 
         # Mean squared error loss
@@ -319,14 +322,18 @@ def dev(dv_set, model, device):
 
 def test(tt_set, model, device):
     model.eval()                                # set model to evalutation mode
-    preds = []
+    preds = []; ents=[]; atts=[]; y_b=[]
     for x,y in tt_set:                            # iterate through the dataloader
         x ,y = x.to(device), y.to(device)                          # move data to device (cpu/cuda)
         with torch.no_grad():                   # disable gradient calculation
             pred = model(x)                     # forward pass (compute output)
-            preds.append(pred.detach().cpu())   # collect prediction
-    preds = torch.cat(preds, dim=0).numpy()     # concatenate all predictions and convert to a numpy array
-    return preds
+            preds.append(pred.detach().cpu())
+            y_b.append(y.detach().cpu())   # collect prediction
+    preds = torch.cat(preds, dim=0).numpy().reshape(-1,1)     # concatenate all predictions and convert to a numpy array
+    y_b= torch.cat(y_b,0).numpy().reshape(-1,1) 
+    table  = np.concatenate((preds, y_b),axis=1)
+    print('from eval.py',table)
+    #return preds
     #         with torch.no_grad():
     #         pred_att_h = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
     #         pred_head.append(pred_att_h.detach().cpu())

@@ -117,13 +117,7 @@ x = attri_data.loc[:,['e','a']].to_numpy()
 # work_end = dict_all_2_idx['P2032']
 
 ## Load pretrain embedding
-emb_ent = torch.load('LiterallyWikidata/files_needed/pretrained_kge/pretrained_complex_entemb.pt')
-list_ent_ids =[]
-with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
-    for line in f:
-        list_ent_ids.append(line.strip())
-## Preparing ent embedding
-ent2idx = {e:i for i,e in enumerate(list_ent_ids)}
+
 attri_data['ent_idx']= attri_data['e'].map(ent2idx)
 print(ent2idx(x[0]))
 embedding_e = torch.nn.Embedding.from_pretrained(emb_ent)
@@ -182,7 +176,14 @@ class KGMTL_Data(Dataset):
         else:
             self.y = torch.FloatTensor(y)
         self.x = torch.FloatTensor(x)
-        
+        emb_ent = torch.load('LiterallyWikidata/files_needed/pretrained_kge/pretrained_complex_entemb.pt')
+        list_ent_ids =[]
+        with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
+            for line in f:
+                list_ent_ids.append(line.strip())
+        ## Preparing ent embedding
+        ent2idx = {e:i for i,e in enumerate(list_ent_ids)}
+
 
     def __getitem__(self, idx):
         if self.y is None:
