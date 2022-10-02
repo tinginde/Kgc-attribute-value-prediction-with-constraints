@@ -23,3 +23,7 @@ MTKGNN/KGMTL4Rec/cons2_saved_model
 MTKGNN/KGMTL4Rec/wei_saved_model
 MTKGNN/KGMTL4Rec/saved_model
 loss_record
+baseline/ml2021spring_hw1_wei.py
+models_wei
+baseline/models
+models
