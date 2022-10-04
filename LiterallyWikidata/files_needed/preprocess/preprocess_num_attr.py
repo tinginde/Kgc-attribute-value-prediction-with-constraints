@@ -16,7 +16,7 @@ rel2idx = {v:k for k,v in enumerate(relations['label'].unique())}
 def numeric_literal_array(data,ent2idx,att2idx):
     #'LiterallyWikidata/LitWD48K/train_attri_data'
     df_all = pd.read_csv(data)
-    df_all=df_all.loc[:,['e','a','std_v']]
+    df_all=df_all.loc[:,['e','a','v']]
 
     # Resulting file
     num_lit = np.zeros([len(ent2idx), len(att2idx)], dtype=np.float32)
@@ -34,15 +34,15 @@ def numeric_literal_array(data,ent2idx,att2idx):
 
 num_lit = numeric_literal_array('LiterallyWikidata/files_needed/numeric_literals_ver06', ent2idx, att2idx)
 print(num_lit.shape[1])
-#np.save('LiterallyWikidata/files_needed/num_lit.npy',num_lit)
+np.save('LiterallyWikidata/files_needed/num_lit.npy',num_lit)
 # print(num_lit[:,1])
 # print(num_lit[0:4,:].shape)
 
 
-pop_idx = att2idx['P1082']
-gdp = att2idx['P4010']
-nominal_gdp = att2idx['P2131']
-nominal_gdp_per = att2idx['P2132']
-gdp_per = att2idx['P2299']
+# pop_idx = att2idx['P1082']
+# gdp = att2idx['P4010']
+# nominal_gdp = att2idx['P2131']
+# nominal_gdp_per = att2idx['P2132']
+# gdp_per = att2idx['P2299']
 
-print(pop_idx, gdp, gdp_per)
+# print(pop_idx, gdp, gdp_per)

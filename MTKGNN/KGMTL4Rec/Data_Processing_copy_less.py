@@ -29,20 +29,21 @@ class KGMTL_Data():
         self.test_rel_data = pd.read_csv(ds_path + 'LitWD48K/test.txt', sep='\t', names=['s', 'p', 'o'])
         
         ## Load Data for Attnet
-        attri_data = pd.read_csv(ds_path + 'files_needed/nogeo_a89')
-        self.attri_data = attri_data[['e','a','std_v']]
+        attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_ver06')
+        self.attri_data = attri_data[['e','a','v']]
         #self.attri_data = attri_data.to_numpy() 
 #       self.attri_data = self.attri_data.sample(frac=0.5, random_state=42)
-        self.train_attri_data, valid_attri_data = train_test_split(self.attri_data, test_size=0.2,stratify=self.attri_data['a'],
+        self.train_attri_data, self.valid_attri_data = train_test_split(self.attri_data, test_size=0.2,stratify=self.attri_data['a'],
                                                                     random_state=802)
-        self.valid_attri_data, self.test_attri_data = train_test_split(valid_attri_data, test_size=0.5,stratify=valid_attri_data['a'],
-                                                                    random_state=802)   
+
+        #self.valid_attri_data, self.test_attri_data = train_test_split(valid_attri_data, test_size=0.5,stratify=valid_attri_data['a'],random_state=802)   
         #self.att2df = pd.read_pickle(ds_path + 'LitWD48K/one_attri_one_df.pkl') 
 
         ## Group Entities, relations, attributes
         self.entities = pd.read_csv(ds_path + 'Entities/entity_labels_en.txt', sep='\t', names=['label', 'name'])
         self.relations = pd.read_csv(ds_path + 'Relations/relation_labels_en.txt', sep='\t', names=['label', 'name'])
-        self.attributes = self.attri_data['a'].unique()
+        with open('LiterallyWikidata/files_needed/attribute.txt','r') as fr:
+            self.attributes = [line.strip() for line in fr] 
 
         # Dict Entites and relations
         #look like{ent:idx,rel:idx,att:idx}
@@ -119,7 +120,7 @@ class KGMTL_Data():
     def create_attr_net_data(self,rel_data):
         #要做dict:{el[0]:[attri,v],[attri,v]}
         dict_e2rv = dict()
-        for el in self.train_attri_data.values:
+        for el in self.attri_data.values:
             attri = self.dict_all_2_idx[el[1]]
             v = el[2]
             e = self.dict_all_2_idx[el[0]]
@@ -138,8 +139,8 @@ class KGMTL_Data():
         # X_all_pos_r: triples filter out same entities in valid and test sets
         # X_all_pos: no filter out
         #rel_data = self.train_rel_data
-        test_att_all=pd.concat([self.valid_attri_data, self.test_attri_data], ignore_index=True)
-        overlap = np.intersect1d(rel_data['s'].unique(),test_att_all['e'].unique())
+        #test_att_all=pd.concat([self.valid_attri_data], ignore_index=True)
+        overlap = np.intersect1d(rel_data['s'].unique(),self.valid_attri_data['e'].unique())
         rel_data_nooverlap = rel_data[~rel_data['s'].isin(overlap)]
         X_all_pos_r = np.empty([rel_data_nooverlap.shape[0], rel_data_nooverlap.shape[1]], dtype=int)
         for i, el in enumerate(rel_data_nooverlap.values):

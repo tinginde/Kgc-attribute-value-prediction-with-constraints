@@ -14,6 +14,23 @@ import os
 from Model import ER_MLP, KGMTL
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 import csv
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+import numpy as np
+
+
+def eval_matrics(y_test, y_pred):
+
+    MSE = mean_squared_error(y_test, y_pred)
+    print('MSE=',MSE)
+    RMSE =np.sqrt(MSE)
+    print('RMSE=',RMSE)
+    MAE= mean_absolute_error(y_test, y_pred)
+    print('MAE=',MAE)
+
+    R2=1-MSE/np.var(y_test)
+    print("R2=", R2)
+
 
 def evaluation(triple_loader, head_loader, tail_loader,device,mymodel):
     pred_rel=[]; pred_head=[]; pred_tail=[]; target_head=[]; ent=[]; attr=[]
@@ -33,13 +50,15 @@ def evaluation(triple_loader, head_loader, tail_loader,device,mymodel):
             target_head.append(y)
             ent.append(x[:,0].detach().cpu())
             attr.append(x[:,1].detach().cpu())
-    preds_head = torch.cat(pred_head,0).numpy() 
-    targets_head = torch.cat(target_head,0).numpy()
+    preds_head = torch.cat(pred_head,0).numpy().reshape((-1,1)) 
+    targets_head = torch.cat(target_head,0).numpy().reshape((-1,1))
     attrs= torch.cat(attr,0).numpy().reshape((-1,1))
     evs= torch.cat(ent,0).numpy().reshape((-1,1))
     #print('from eval.py',preds_head, sep='\t')
     #return preds_head, targets_head
     table = np.concatenate((evs, attrs, preds_head, targets_head),axis=1)
+    eval_matrics(preds_head, targets_head)
+
     return table 
 
 
@@ -77,6 +96,10 @@ def save_result(eval_result, file):
         writer.writerow(['idx','e','a','pred_h','target_h'])
         for i, [e,a,p,t] in enumerate(eval_result[:]):
             writer.writerow([i, e, a, p, t])
+
+
+
+    
     
     
 

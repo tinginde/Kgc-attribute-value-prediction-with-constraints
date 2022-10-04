@@ -97,44 +97,32 @@ We have three kinds of datasets:
 * `dev`: for validation
 * `test`: for testing (w/o target value)
 """
-
+path = 'LiterallyWikidata/files_needed/numeric_literals_ver06'
+big_table = 'LiterallyWikidata/files_needed/num_lit.npy'
 attri_data = pd.read_csv('LiterallyWikidata/files_needed/numeric_literals_ver06')
 
-x = attri_data.loc[:,['e','a']].to_numpy()
+x = attri_data[['e','a']].values
+y= attri_data['std_v'].values
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(x, y,test_size=0.2, random_state=802,stratify=x[:,1])
+
+num_lit = np.load(big_table)
+
 ## constraint needed:
-# pop_idx = dict_all_2_idx['P1082']
-# gdp = dict_all_2_idx['P4010']
-# nominal_gdp = dict_all_2_idx['P2131']
-# nominal_gdp_per = dict_all_2_idx['P2132']
-# gdp_per = dict_all_2_idx['P2299']
-# date_of_birth = dict_all_2_idx['P569']
-# date_of_death = dict_all_2_idx['P570']
+# pop_idx = att2idx['P1082']
+# gdp = att2idx['P4010']
+# nominal_gdp = att2idx['P2131']
+# nominal_gdp_per = att2idx['P2132']
+# gdp_per = att2idx['P2299']
+# date_of_birth = att2idx['P569']
+# date_of_death = att2idx['P570']
 # area = ['P2046']
-# net_profit = dict_all_2_idx['P2295']
-# retirement_age = dict_all_2_idx['P3001']
-# age_of_majority = dict_all_2_idx['P2997']
-# work_start = dict_all_2_idx['P2031']
-# work_end = dict_all_2_idx['P2032']
+# net_profit = att2idx['P2295']
+# retirement_age = att2idx['P3001']
+# age_of_majority = att2idx['P2997']
+# work_start = att2idx['P2031']
+# work_end = att2idx['P2032']
 
-## Load pretrain embedding
-
-attri_data['ent_idx']= attri_data['e'].map(ent2idx)
-print(ent2idx(x[0]))
-embedding_e = torch.nn.Embedding.from_pretrained(emb_ent)
-input_e = torch.LongTensor(attri_data['ent_idx'].to_numpy())
-
-entity_embedding = embedding_e(input_e)
-## Preparing att embedding
-att2idx = {a:i for i,a in enumerate(attri_data['a'].unique())}
-attri_data['a_idx']=attri_data['a'].map(att2idx)
-embedding_a = torch.nn.Embedding(len(attri_data['a'].unique()),128,padding_idx=0)
-input_a = torch.LongTensor(attri_data['a_idx'].to_numpy())
-
-attribute_embedding = embedding_a(input_a)
-## concat two embedding
-x_data = torch.cat([entity_embedding,attribute_embedding],dim=1).detach().numpy()
-
-y= attri_data.loc[:,'std_v'].to_numpy()
 
 """# **Setup Hyper-parameters**
 
@@ -142,9 +130,9 @@ y= attri_data.loc[:,'std_v'].to_numpy()
 """
 
 device = get_device()                 # get the current available device ('cpu' or 'cuda')
-os.makedirs('models', exist_ok=True)  # The trained model will be saved to ./models/
+os.makedirs('models_ver2', exist_ok=True)  # The trained model will be saved to ./models/
 
-# TODO: How to tune these hyper-parameters to improve your model's performance?
+
 config = {
     'n_epochs': 25,                # maximum number of epochs
     'batch_size': 200,               # mini-batch size for dataloader
@@ -154,48 +142,58 @@ config = {
 }
 
 
-
-
-from sklearn.model_selection import train_test_split
-X_trainset, X_testset, y_trainset, y_testset = train_test_split(x_data, y,test_size=0.2, random_state=802)
-
-
-
 """## **Dataset**
 
 """
+list_ent_ids =[]
 
 class KGMTL_Data(Dataset):
     '''
     x: Features.
     y: Targets, if none, do prediction.
     '''
-    def __init__(self, x, y=None):
+    def __init__(self, x, y):
+        #attri_data = pd.read_csv(path)
         if y is None:
             self.y = y
         else:
-            self.y = torch.FloatTensor(y)
-        self.x = torch.FloatTensor(x)
+            self.y = y
+        self.x = x
+
+        ## Preparing ent embedding (from pre-trained)
         emb_ent = torch.load('LiterallyWikidata/files_needed/pretrained_kge/pretrained_complex_entemb.pt')
-        list_ent_ids =[]
+        self.embedding_e = torch.nn.Embedding.from_pretrained(emb_ent)
+
         with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
-            for line in f:
-                list_ent_ids.append(line.strip())
-        ## Preparing ent embedding
-        ent2idx = {e:i for i,e in enumerate(list_ent_ids)}
+            self.ent2idx = {line.strip(): i for i, line in enumerate(f)}
+
+        print(len(self.ent2idx))
+
+
+        ## Preparing att embedding
+
+        with open('LiterallyWikidata/files_needed/attribute.txt','r') as fr:
+            self.att2idx = {line.strip(): i for i, line in enumerate(fr)}
+        self.embedding_a = torch.nn.Embedding(len(self.att2idx),128,padding_idx=0)
 
 
     def __getitem__(self, idx):
-        if self.y is None:
-            return self.x[idx]
-        else:
-            return self.x[idx], self.y[idx]
+        e = self.ent2idx[self.x[idx],0]
+        input_e = torch.LongTensor(e)
+        
+        print(self.x[idx,0])
+        print(input_e)
+        entity_embedding = self.embedding_e(input_e)
+        
+        input_a = torch.LongTensor(self.att2idx[self.x[idx,1]])
+        attribute_embedding = self.embedding_a(input_a)
+
+        ## concat two embedding 
+        self.input = torch.cat([entity_embedding,attribute_embedding],dim=1)
+        return self.x[idx,0],self.x[idx,1],self.y[idx]
 
     def __len__(self):
         return len(self.x)
-
-
-
 
 
 """## **DataLoader**
@@ -204,8 +202,8 @@ A `DataLoader` loads data from a given `Dataset` into batches.
 
 """
 
-train_set =KGMTL_Data(X_trainset,y_trainset)
-valid_set =KGMTL_Data(X_testset,y_testset)
+train_set =KGMTL_Data(X_train,y_train)
+valid_set =KGMTL_Data(X_test,y_test)
 train_loader = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True, pin_memory=True)
 valid_loader = DataLoader(valid_set, batch_size=config['batch_size'], shuffle=True, pin_memory=True)
 

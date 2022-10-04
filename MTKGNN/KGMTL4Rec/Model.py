@@ -156,64 +156,68 @@ class KGMTL(nn.Module):
         # x_constraint = x_constraint.to(device)          
         return torch.sqrt(self.criterion(pred, target))
 
-    # def forward_AST(self,batch_size):
-    #     # To-do: to make new dict_a2ev
-    #     with open('LiterallyWikidata/files_needed/dict_a2ev.pickle', 'rb') as fr:
-    #         dict_a2ev = pickle.load(fr)
-    #     # ramdomly choose an atrribute (and no repeated index number)
-    #     # output would be like: tensor([139, 101,  78, 151, 161,  71,  40, 126,   8,  96])
-    #     weights = torch.ones(self.num_attributes)
-    #     idxs_attr = torch.multinomial(weights, num_samples=batch_size, replacement=True)
-        
-    #     # random sample a batch containing e, v with the same attri 
-    #     att_np = idxs_attr.numpy()
-    #     ev_list = [random.sample(dict_a2ev[att_np[i]],100) for i in range(len(att_np))]
+    def forward_AST(self,batch_size):
+        # To-do: to make new dict_a2ev
+        with open('LiterallyWikidata/files_needed/dict_a2ev_nonorm.pickle', 'rb') as fr:
+            dict_a2ev = pickle.load(fr)
+        # ramdomly choose an atrribute (and no repeated index number)
+        # output would be like: tensor([139, 101,  78, 151, 161,  71,  40, 126,   8,  96])
+        #weights = torch.ones(self.num_attributes)
+        #idxs_attr = torch.multinomial(weights, num_samples=batch_size, replacement=True)
+        list_key = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 18, 19, 20, 22, 25, 26, 29, 30, 31, 32, 33, 36, 37, 38, 40, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 56, 57, 70, 71, 76, 79, 80, 81, 82, 83, 85, 90, 91, 92, 94, 95, 96, 97, 98, 137, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 212, 213, 226, 227, 228, 229, 230, 233, 234, 235, 236, 237]
+        idxs_attr=[]
+        import random
+        for k in range(batch_size):
+            idxs_attr.append(random.choice(list_key))
+        att_np = np.array(idxs_attr)
+        # random sample a batch containing e, v with the same attri 
+        ev_list = [random.sample(dict_a2ev[att_np[i]],100) for i in range(len(att_np))]
 
-    #     # making idxs_ent
-    #     idxs_ent=[]
-    #     target=[]
-    #     for i in range(len(ev_list)):
-    #         batch_ev=ev_list[i]
-    #         for j in range(len(batch_ev)):
-    #             idxs_ent.append(batch_ev[j][0])
-    #             target.append(batch_ev[j][1])
-    #     # list to numpy and reshape
-    #     idxs_ent= np.array(idxs_ent).reshape((batch_size,-1))      
-    #     # change to tensor form
-    #     ent_tensor = torch.from_numpy(idxs_ent).to(device)
-    #     # resize att tensor
-    #     att_np = att_np.reshape(batch_size,-1)
-    #     # repeat idx_att 100 times to fit the input form
-    #     att_np_ts = np.repeat(att_np,100,axis = 1)
-    #     att_tensor = torch.from_numpy(att_np_ts).to(device)
-    #     #idxs_attr = idxs_attr.view(87,-1).to(device)
-    #     target = np.array(target).reshape(batch_size,-1)
-    #     target = torch.from_numpy(target).float().to(device)
-    #     # attr_emb = self.att_embeddings(idxs_attr)
-    #     # ent_emb = self.ent_embeddings(ent_tensor)
+        # making idxs_ent
+        idxs_ent=[]
+        target=[]
+        for i in range(len(ev_list)):
+            batch_ev=ev_list[i]
+            for j in range(len(batch_ev)):
+                idxs_ent.append(batch_ev[j][0])
+                target.append(batch_ev[j][1])
+        # list to numpy and reshape
+        idxs_ent= np.array(idxs_ent).reshape((batch_size,-1))      
+        # change to tensor form
+        ent_tensor = torch.from_numpy(idxs_ent).to(device)
+        # resize att tensor
+        att_np = att_np.reshape(batch_size,-1)
+        # repeat idx_att 100 times to fit the input form
+        att_np_ts = np.repeat(att_np,100,axis = 1)
+        att_tensor = torch.from_numpy(att_np_ts).to(device)
+        #idxs_attr = idxs_attr.view(87,-1).to(device)
+        target = np.array(target).reshape(batch_size,-1)
+        target = torch.from_numpy(target).float().to(device)
+        # attr_emb = self.att_embeddings(idxs_attr)
+        # ent_emb = self.ent_embeddings(ent_tensor)
 
-    #     #inputs = torch.cat([ent_emb, attr_emb], dim=1)
+        #inputs = torch.cat([ent_emb, attr_emb], dim=1)
 
-    #     # torch.nn.Linear(2*self.emb_dim, 100),
-    #     # torch.nn.Tanh(),
-    #     # torch.nn.Linear(100, 1))
-    #     #pred_left = self.attr_net_left(inputs)
-    #     #pred_right = self.attr_net_right(inputs)
+        # torch.nn.Linear(2*self.emb_dim, 100),
+        # torch.nn.Tanh(),
+        # torch.nn.Linear(100, 1))
+        #pred_left = self.attr_net_left(inputs)
+        #pred_right = self.attr_net_right(inputs)
 
 
-    #     x_ah = self.att_embeddings(att_tensor)
-    #     x_h = self.ent_embeddings(ent_tensor)
-    #     test_mm = self.ah(x_ah)
-    #     inputs = torch.cat([self.ah(x_ah), self.Mh(x_h)], dim=2)
-    #     ## hidden_head_att_net_fc1 is the head attribute net hidden layer
-    #     head_att_net_fc1 = self.relu(self.hidden_attr_net_fc(inputs))
-    #     pred_left = self.dropout(head_att_net_fc1) 
+        x_ah = self.att_embeddings(att_tensor)
+        x_h = self.ent_embeddings(ent_tensor)
+        test_mm = self.ah(x_ah)
+        inputs = torch.cat([self.ah(x_ah), self.Mh(x_h)], dim=2)
+        ## hidden_head_att_net_fc1 is the head attribute net hidden layer
+        head_att_net_fc1 = self.relu(self.hidden_attr_net_fc(inputs))
+        pred_left = self.dropout(head_att_net_fc1) 
        
-    #     x_at = self.att_embeddings(att_tensor)
-    #     x_t = self.ent_embeddings(ent_tensor)
-    #     inputs = torch.cat([self.at(x_at), self.Mt(x_t)], dim=2)
-    #     tail_att_net_fc1 = self.relu(self.hidden_attr_net_fc(inputs))
-    #     pred_right = self.dropout(tail_att_net_fc1)  
+        x_at = self.att_embeddings(att_tensor)
+        x_t = self.ent_embeddings(ent_tensor)
+        inputs = torch.cat([self.at(x_at), self.Mt(x_t)], dim=2)
+        tail_att_net_fc1 = self.relu(self.hidden_attr_net_fc(inputs))
+        pred_right = self.dropout(tail_att_net_fc1)  
 
 
-    #     return pred_left.squeeze(2), pred_right.squeeze(2), target
+        return pred_left.squeeze(2), pred_right.squeeze(2), target
