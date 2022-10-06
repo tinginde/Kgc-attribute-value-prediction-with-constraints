@@ -19,57 +19,16 @@ sys.path.append('LiterallyWikidata')
 from Model import KGMTL
 from Evaluation import *
 from Data_Processing_copy_less import *
-# For plotting learning curve
-#from torch.utils.tensorboard import SummaryWriter
 
-def plot_learning_curve(loss_record, title=''):
-    ''' Plot learning curve of your DNN (train & dev loss) '''
-    total_steps = len(loss_record['att_h_train'])
-    x_1 = range(total_steps)
-    x_2 = x_1[::len(loss_record['att_h_train']) // len(loss_record['att_h_val'])]
-    figure(figsize=(6, 4))
-    plt.plot(x_1, loss_record['att_h_train'], c='tab:red', label='train')
-    plt.plot(x_2, loss_record['att_h_val'], c='tab:cyan', label='dev')
-    plt.ylim(0.0, 5.)
-    plt.xlabel('Training steps')
-    plt.ylabel('MSE loss')
-    plt.title('Learning curve of {}'.format(title))
-    plt.legend()
-    plt.show()
-
-
-def plot_pred(dv_set, model, device, lim=35., preds=None, targets=None):
-    ''' Plot prediction of your DNN '''
-    if preds is None or targets is None:
-        model.eval()
-        preds, targets = [], []
-        for x, y in dv_set:
-            x, y = x.to(device), y.to(device)
-            with torch.no_grad():
-                pred = model(x)
-                preds.append(pred.detach().cpu())
-                targets.append(y.detach().cpu())
-        preds = torch.cat(preds, dim=0).numpy()
-        targets = torch.cat(targets, dim=0).numpy()
-
-    figure(figsize=(5, 5))
-    plt.scatter(targets, preds, c='r', alpha=0.5)
-    plt.plot([-0.2, lim], [-0.2, lim], c='b')
-    plt.xlim(-0.2, lim)
-    plt.ylim(-0.2, lim)
-    plt.xlabel('ground truth value')
-    plt.ylabel('predicted value')
-    plt.title('Ground Truth v.s. Prediction')
-    plt.show()        
 
 def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=500)
+    parser.add_argument('-epochs', type=int, required=False, default=50)
     parser.add_argument('-batch_size', type=float, required=False, default=200
     )
-    parser.add_argument('-lr', type=float, required=False, default=0.0001)
+    parser.add_argument('-lr', type=float, required=False, default=0.001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
     parser.add_argument('-emb_size', type=int, required=False, default=128)
     parser.add_argument('-hidden_size', type=int, required=False, default=64)
@@ -127,8 +86,8 @@ def main():
     X_val_head_attr, X_val_tail_attr, y_val_head_attr, y_val_tail_attr = KGMTL_Data_local.create_attr_net_data(KGMTL_Data_local.val_rel_data)
     print(f'X_val_head_attr: {len(X_val_head_attr)}')
     
-    X_test_head_attr, X_test_tail_attr, y_test_head_attr, y_test_tail_attr = KGMTL_Data_local.create_attr_net_data(KGMTL_Data_local.test_rel_data)
-    print(f'X_test_head_attr: {len(X_test_head_attr)}')
+    # X_test_head_attr, X_test_tail_attr, y_test_head_attr, y_test_tail_attr = KGMTL_Data_local.create_attr_net_data(KGMTL_Data_local.test_rel_data)
+    # print(f'X_test_head_attr: {len(X_test_head_attr)}')
     
     # Put triples into TensorDataset
     train_loader_triplets, train_loader_head_attr, train_loader_tail_attr = KGMTL_Data_local.create_pytorch_data(
@@ -332,11 +291,11 @@ def main():
             best_mse = np.mean(loss_record['att_h_val'])
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
-            torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/cons2_saved_model/Cons2_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+            torch.save(model.state_dict(),'exp_cons/saved_model/gdp_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
 
     #print(loss_record)
-    with open('cons_gdp_loss_record.pickle','wb') as fw:
-        pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
+    with open('exp_cons/loss_record/gdp_loss_record.pickle','wb') as fw:
+         pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
 
 
         #保存model
@@ -349,7 +308,7 @@ def main():
     model.eval()
     table = evaluation(valid_loader_triplets, valid_loader_head_attr, valid_loader_tail_attr, device , mymodel=model) 
     # # save_pred(preds1, 'predicted_result/epoch{}_preds_rel.csv'.format(epochs))
-    save_result(table, 'predicted_result/cons_gdp_epoch{}_preds_att_head.csv'.format(epochs)) 
+    save_result(table, 'exp_cons/predicted_result/gdp_{}_{}_{}preds_att_head.csv'.format(epochs, batch_size,learning_rate)) 
     # # save_pred(preds3, 'predicted_result/epoch{}_preds_att_tail.csv'.format(epochs))
     # 
 

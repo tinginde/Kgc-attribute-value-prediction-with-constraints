@@ -21,13 +21,13 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=20)
+    parser.add_argument('-epochs', type=int, required=False, default=50)
     parser.add_argument('-batch_size', type=float, required=False, default=200
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
-    parser.add_argument('-emb_size', type=int, required=False, default=128)
-    parser.add_argument('-hidden_size', type=int, required=False, default=64)
+    parser.add_argument('-emb_size', type=int, required=False, default=50)
+    parser.add_argument('-hidden_size', type=int, required=False, default=100)
     parser.add_argument('-Ns', type=int, required=False, default=3)
     parser.add_argument('-device', type=str, required=False, default="cuda:0")
     parser.add_argument('-nb_hist', type=int, required=False, default=1)
@@ -76,8 +76,8 @@ def main():
     print(f'train rel set: {len(X_train_triples)}')
     X_val_triplets, y_val_triplets = KGMTL_Data_local.create_triplets_data(KGMTL_Data_local.val_rel_data)
     print(f'val rel set: {len(X_val_triplets)}')
-    X_test_triplets, y_test_triplets = KGMTL_Data_local.create_triplets_data(KGMTL_Data_local.test_rel_data)
-    print(f'val rel set: {len(X_test_triplets)}')
+    # X_test_triplets, y_test_triplets = KGMTL_Data_local.create_triplets_data(KGMTL_Data_local.test_rel_data)
+    # print(f'val rel set: {len(X_test_triplets)}')
 
     X_train_head_attr, X_train_tail_attr, y_train_head_attr, y_train_tail_attr = KGMTL_Data_local.create_attr_net_data(KGMTL_Data_local.train_rel_data)
     print(f'X_train_head_attr: {len(X_train_head_attr)}')
@@ -145,18 +145,18 @@ def main():
         print('epoch {}, SUM Training loss {}'.format(epoch, np.mean(loss_record['rel_train']) +  np.mean(loss_record['att_h_train']) + np.mean(loss_record['att_t_train'])))
 
 
-        # for k in range(4):
-        #     pred_left, pred_right, target = model.forward_AST(batch_size)
-        #     loss_AST = model.cal_loss(pred_left, target) + model.cal_loss(pred_right, target)
-        #     loss_AST.backward()
-        #     optimizer.step()
-        #     loss_record['ast_train'].append(loss_AST.detach().cpu().item())
-        # print('epoch {}, training AST loss {}'.format(epoch, np.mean(loss_record['ast_train'])))
-        # # with open('AST_prediction', 'w') as fp:
-        # #         writer = csv.writer(fp)
-        # #         writer.writerow(['idx', 'ast_pred'])
-        # #         for i, p in enumerate(pred_left.detach().cpu()):
-        # #             writer.writerow([i, p])
+        for k in range(4):
+            pred_left, pred_right, target = model.forward_AST(batch_size)
+            loss_AST = model.cal_loss(pred_left, target) + model.cal_loss(pred_right, target)
+            loss_AST.backward()
+            optimizer.step()
+            loss_record['ast_train'].append(loss_AST.detach().cpu().item())
+        print('epoch {}, training AST loss {}'.format(epoch, np.mean(loss_record['ast_train'])))
+        # with open('AST_prediction', 'w') as fp:
+        #         writer = csv.writer(fp)
+        #         writer.writerow(['idx', 'ast_pred'])
+        #         for i, p in enumerate(pred_left.detach().cpu()):
+        #             writer.writerow([i, p])
   
 
         model.eval()
@@ -183,7 +183,7 @@ def main():
             print('Better Performance! Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
             
-            torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/cp_nonorm_ast_model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+            torch.save(model.state_dict(),'exp/saved_model/minmax_ast_model_{}_{}_{}_50_100.pt'.format(epochs, batch_size,learning_rate))
             
 
         #with open('loss_record/ast_model_{}_{}_{}.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
@@ -210,7 +210,7 @@ def main():
     model.eval()
     table = evaluation(valid_loader_triplets, valid_loader_head_attr, valid_loader_tail_attr, device , mymodel=model) 
     # # save_pred(preds1, 'predicted_result/epoch{}_preds_rel.csv'.format(epochs))
-    save_result(table, 'predicted_result/cp_valid_ast_epoch{}_preds_att_head.csv'.format(epochs)) 
+    save_result(table, 'exp/predicted_result/minmax_ast_{}_{}_50_100preds_att_head.csv'.format(epochs,batch_size)) 
     # # save_pred(preds3, 'predicted_result/epoch{}_preds_att_tail.csv'.format(epochs))
     # 
 

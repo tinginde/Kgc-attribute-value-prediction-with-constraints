@@ -330,7 +330,7 @@ def main():
             best_mse = np.mean(loss_record['att_h_val'])
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
-            torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/cons2_saved_model/Cons_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
+            torch.save(model.state_dict(),'exp_cons/saved_model/gdp_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
 
     #print(loss_record)
     with open('wei_loss_record_cons.pickle','wb') as fw:

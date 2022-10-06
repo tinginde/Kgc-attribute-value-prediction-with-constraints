@@ -30,7 +30,7 @@ class KGMTL_Data():
         
         ## Load Data for Attnet
         attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_ver06')
-        self.attri_data = attri_data[['e','a','v']]
+        self.attri_data = attri_data[['e','a','minmax_v']]
         #self.attri_data = attri_data.to_numpy() 
 #       self.attri_data = self.attri_data.sample(frac=0.5, random_state=42)
         self.train_attri_data, self.valid_attri_data = train_test_split(self.attri_data, test_size=0.2,stratify=self.attri_data['a'],
@@ -120,7 +120,7 @@ class KGMTL_Data():
     def create_attr_net_data(self,rel_data):
         #要做dict:{el[0]:[attri,v],[attri,v]}
         dict_e2rv = dict()
-        for el in self.attri_data.values:
+        for el in self.train_attri_data.values:
             attri = self.dict_all_2_idx[el[1]]
             v = el[2]
             e = self.dict_all_2_idx[el[0]]
@@ -142,6 +142,7 @@ class KGMTL_Data():
         #test_att_all=pd.concat([self.valid_attri_data], ignore_index=True)
         overlap = np.intersect1d(rel_data['s'].unique(),self.valid_attri_data['e'].unique())
         rel_data_nooverlap = rel_data[~rel_data['s'].isin(overlap)]
+        rel_data_nooverlap = rel_data_nooverlap.drop_duplicates(subset=['s','p'],keep='last')
         X_all_pos_r = np.empty([rel_data_nooverlap.shape[0], rel_data_nooverlap.shape[1]], dtype=int)
         for i, el in enumerate(rel_data_nooverlap.values):
             X_all_pos_r[i] = [self.dict_all_2_idx[el_] for el_ in el]

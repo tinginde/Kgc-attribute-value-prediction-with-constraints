@@ -91,7 +91,7 @@ class KGMTL(nn.Module):
         # dropout layer (p=0.2)
         self.dropout = nn.Dropout(config['input_dropout'])
 
-        self.tahn = nn.Tanh()
+        self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
 
         self.loss_fn = nn.BCEWithLogitsLoss()
@@ -120,7 +120,7 @@ class KGMTL(nn.Module):
         x_t = self.ent_embeddings(t)
         # # Mh, Mr, Mt are the h,r,t hidden layers 
         # ## hidden_struct_net_fc1 is the struct net hidden layer
-        struct_net_fc1 = self.relu(self.hidden_struct_net_fc(self.Mh(x_h) + self.Mr(x_r) + self.Mt(x_t)))
+        struct_net_fc1 = self.tanh(self.hidden_struct_net_fc(self.Mh(x_h) + self.Mr(x_r) + self.Mt(x_t)))
         pred1 = self.dropout(struct_net_fc1)
 
         return pred1
@@ -130,7 +130,7 @@ class KGMTL(nn.Module):
         x_ah = self.att_embeddings(ah)
         x_h = self.ent_embeddings(h)
         ## hidden_head_att_net_fc1 is the head attribute net hidden layer
-        head_att_net_fc1 = self.relu(self.hidden_attr_net_fc(torch.cat((self.ah(x_ah), self.Mh(x_h)),1)))
+        head_att_net_fc1 = self.tanh(self.hidden_attr_net_fc(torch.cat((self.ah(x_ah), self.Mh(x_h)),1)))
         pred_h = self.dropout(head_att_net_fc1) 
         ##
         return pred_h
@@ -140,7 +140,7 @@ class KGMTL(nn.Module):
         x_at = self.att_embeddings(at)
         x_t = self.ent_embeddings(t)
         ## hidden_head_att_net_fc1 is the head attribute net hidden layer
-        tail_att_net_fc1 = self.relu(self.hidden_attr_net_fc(torch.cat((self.at(x_at), self.Mt(x_t)),1)))
+        tail_att_net_fc1 = self.tanh(self.hidden_attr_net_fc(torch.cat((self.at(x_at), self.Mt(x_t)),1)))
         pred_t = self.dropout(tail_att_net_fc1)  
         ##
         return pred_t
@@ -154,7 +154,7 @@ class KGMTL(nn.Module):
         #     regularization_loss += torch.sum(param ** 2)
         # x_constraint = torch.tensor([x[i][0]*x[i][18] for i in range(len(x))])
         # x_constraint = x_constraint.to(device)          
-        return torch.sqrt(self.criterion(pred, target))
+        return self.criterion(pred, target)
 
     def forward_AST(self,batch_size):
         # To-do: to make new dict_a2ev
