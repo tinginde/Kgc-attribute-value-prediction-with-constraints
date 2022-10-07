@@ -32,9 +32,13 @@ def var_r_df (df,var=list_var):
     df['mae']=abs(df.pred_h-df.target_h)
     return df
 
-df=read_result('exp/predicted_result/minmax_ast_epoch50_batch200_preds_att_head.csv')
+df=read_result('exp_cons/predicted_result/minmax_vargap_2_200_128_64preds_att_head.csv')
+print(len(df))
+print(len(df.a.unique()))
 df=var_r_df(df)
-print(df[:40])
+#print(df[:40])
+print(df.a.value_counts())
 df_preds=df[df['pred_h']!=0.0]
-print(len(df_preds))
-print(list(df_preds.groupby('a').pred_h.value_counts().index))
+#print(len(df_preds))
+print(df.groupby('a').mae.agg('mean'))
+
