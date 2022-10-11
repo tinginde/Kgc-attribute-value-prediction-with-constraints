@@ -30,15 +30,22 @@ def var_r_df (df,var=list_var):
     list_var = var
     df = df[df.a.isin(list_var)].sort_values(by='a')
     df['mae']=abs(df.pred_h-df.target_h)
+    df['square_mae']=np.square(abs(df.pred_h-df.target_h))
     return df
 
-df=read_result('exp_cons/predicted_result/minmax_vargap_2_200_128_64preds_att_head.csv')
-print(len(df))
-print(len(df.a.unique()))
+df=read_result('exp_cons/predicted_result/vargap_10_200_128_64preds_att_head.csv')
+print(df[:20])
+print('diff a len', len(df.a.unique()))
 df=var_r_df(df)
 #print(df[:40])
 print(df.a.value_counts())
 df_preds=df[df['pred_h']!=0.0]
-#print(len(df_preds))
+df_a25=df[df['a']==25]
+#print('number of pred == 1 is ',len(df_preds))
+print(df_a25)
+print(df[:10])
+print(f'------------preds a mae--------------------')
 print(df.groupby('a').mae.agg('mean'))
-
+print(f'------------preds a rmse--------------------')
+square_v = df.groupby('a').square_mae.agg('mean')
+print(np.sqrt(square_v))
