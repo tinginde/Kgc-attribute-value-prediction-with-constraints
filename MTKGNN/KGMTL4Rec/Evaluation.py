@@ -97,6 +97,27 @@ def save_result(eval_result, file):
         for i, [e,a,p,t] in enumerate(eval_result[:]):
             writer.writerow([i, e, a, p, t])
 
+def eval_headattr(head_loader, device, mymodel):
+    pred_head=[]; target_head=[]; ent=[]; attr=[]
+    #model.eval()
+    for x, y in head_loader:
+        x = x.to(device)
+        with torch.no_grad():
+            pred_att_h = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
+            pred_head.append(pred_att_h.detach().cpu())
+            target_head.append(y)
+            ent.append(x[:,0].detach().cpu())
+            attr.append(x[:,1].detach().cpu())
+    preds_head = torch.cat(pred_head,0).numpy().reshape((-1,1)) 
+    targets_head = torch.cat(target_head,0).numpy().reshape((-1,1))
+    attrs= torch.cat(attr,0).numpy().reshape((-1,1))
+    evs= torch.cat(ent,0).numpy().reshape((-1,1))
+    #print('from eval.py',preds_head, sep='\t')
+    #return preds_head, targets_head
+    table = np.concatenate((evs, attrs, preds_head, targets_head),axis=1)
+    eval_matrics(preds_head, targets_head)
+
+    return table 
 
 
     
