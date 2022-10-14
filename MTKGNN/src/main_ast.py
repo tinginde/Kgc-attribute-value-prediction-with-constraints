@@ -21,13 +21,13 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=50)
+    parser.add_argument('-epochs', type=int, required=False, default=20)
     parser.add_argument('-batch_size', type=float, required=False, default=200
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
     parser.add_argument('-emb_size', type=int, required=False, default=50)
-    parser.add_argument('-hidden_size', type=int, required=False, default=100)
+    parser.add_argument('-hidden_size', type=int, required=False, default=64)
     parser.add_argument('-Ns', type=int, required=False, default=3)
     parser.add_argument('-device', type=str, required=False, default="cuda:0")
     parser.add_argument('-nb_hist', type=int, required=False, default=1)
@@ -78,13 +78,13 @@ def main():
     print(f'val rel set: {len(X_val_triplets)}')
     # X_test_triplets, y_test_triplets = KGMTL_Data_local.create_triplets_data(KGMTL_Data_local.test_rel_data)
     # print(f'val rel set: {len(X_test_triplets)}')
-
+    
+    ## Load ATT triples 
     X_train_head_attr, X_train_tail_attr, y_train_head_attr, y_train_tail_attr = KGMTL_Data_local.create_attr_net_data(KGMTL_Data_local.train_rel_data)
     print(f'X_train_head_attr: {len(X_train_head_attr)}')
     X_val_head_attr, X_val_tail_attr, y_val_head_attr, y_val_tail_attr = KGMTL_Data_local.create_attr_net_data(KGMTL_Data_local.val_rel_data)
     print(f'X_val_head_attr: {len(X_val_head_attr)}')
-    
-    # X_test_head_attr, X_test_tail_attr, y_test_head_attr, y_test_tail_attr = KGMTL_Data_local.create_attr_net_data(KGMTL_Data_local.test_rel_data)
+    # X_test_head_attr = KGMTL_Data_local.create_attr_net_data(KGMTL_Data_local.test_rel_data)
     # print(f'X_test_head_attr: {len(X_test_head_attr)}')
     
     # Put triples into TensorDataset
@@ -93,19 +93,20 @@ def main():
     X_train_head_attr, y_train_head_attr, 
     X_train_tail_attr, y_train_tail_attr, batch_size)
     
-    valid_loader_triplets, valid_loader_head_attr, valid_loader_tail_attr = KGMTL_Data_local.create_pytorch_data(
-    X_val_triplets, y_val_triplets, 
-    X_val_head_attr, y_val_head_attr, 
-    X_val_tail_attr, y_val_tail_attr, batch_size, mode='test')
+    # valid_loader_triplets, valid_loader_head_attr, valid_loader_tail_attr = KGMTL_Data_local.create_pytorch_data(
+    # X_val_triplets, y_val_triplets, 
+    # X_val_head_attr, y_val_head_attr, 
+    # X_val_tail_attr, y_val_tail_attr, batch_size, mode='test')
 
     # test_loader_triplets, test_loader_head_attr, test_loader_tail_attr = KGMTL_Data_local.create_pytorch_data(
     # X_test_triplets, y_test_triplets, 
     # X_test_head_attr, y_test_head_attr, 
     # X_test_tail_attr, y_test_tail_attr, batch_size, mode='test')
+    valid_loader_head_attr = KGMTL_Data_local.eval_loader(KGMTL_Data_local.valid_attri_data, batch_size)
 
     ## Training the model
     loss_record = {'rel_train':[],'rel_valid':[],'att_h_train':[],'att_t_train':[],'att_h_val':[],'att_t_val':[],'ast_train':[]}
-    best_mse = 10**15
+    best_mse = 1000
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate) 
     for epoch in range(epochs):
         model.train() 
@@ -160,14 +161,14 @@ def main():
   
 
         model.eval()
-        for x, y in valid_loader_triplets:                         # iterate through the dataloader
-            x, y = x.to(device), y.to(device) 
-            with torch.no_grad(): 
-                pred_1 = model.StructNet_forward(x[:,0], x[:,1], x[:,2])
-                loss_1 = model.loss_fn(pred_1, y)
-            loss_record['rel_valid'].append(loss_1.detach().cpu().item())
-        print('epoch {}, Training loss_rel {}'.format(epoch, np.mean(loss_record['rel_train']))) 
-        print('epoch {}, Validation loss_rel {}'.format(epoch, np.mean(loss_record['rel_valid'])))
+        # for x, y in valid_loader_triplets:                         # iterate through the dataloader
+        #     x, y = x.to(device), y.to(device) 
+        #     with torch.no_grad(): 
+        #         pred_1 = model.StructNet_forward(x[:,0], x[:,1], x[:,2])
+        #         loss_1 = model.loss_fn(pred_1, y)
+        #     loss_record['rel_valid'].append(loss_1.detach().cpu().item())
+        # print('epoch {}, Training loss_rel {}'.format(epoch, np.mean(loss_record['rel_train']))) 
+        # print('epoch {}, Validation loss_rel {}'.format(epoch, np.mean(loss_record['rel_valid'])))
 
         for x, y in valid_loader_head_attr:
             x, y = x.to(device), y.to(device)
@@ -183,35 +184,17 @@ def main():
             print('Better Performance! Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
             
-            torch.save(model.state_dict(),'exp/saved_model/minmax_ast_model_{}_{}_{}_50_100.pt'.format(epochs, batch_size,learning_rate))
+            torch.save(model.state_dict(),'exp_ast/saved_model/std_ast_model_{}_{}_{}_50_64.pt'.format(epochs, batch_size,learning_rate))
             
 
         #with open('loss_record/ast_model_{}_{}_{}.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
         #     pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
-        # for x, y in valid_loader_tail_attr:
-        #     x, y = x.to(device), y.to(device)
-        #     with torch.no_grad():
-        #         pred_3 = model.AttrNet_t_forward(x[:,0], x[:,1])
-        #         loss_3 = model.cal_loss(pred_3, y)
-        #     loss_record['att_t_val'].append(loss_3.detach().cpu().item())
-        # print('epoch {}, Tail Reg Training loss {}'.format(epoch, np.mean(loss_record['att_t_val'])))
-
-
-        #tr_loss.append(np.mean(loss_1_epoch) +  np.mean(loss_2_epoch) + np.mean(loss_3_epoch) )
-        #save_pred(pred_2.detach().cpu(), 'predicted_result/valid_{}_{}_{}_preds_att_head.csv'.format(epochs,batch_size,emb_size)) 
-   
-        #保存model
-        # if loss_record['att_h_val'] < best_mse: 
-        #     print('Saving model (epoch = {:4d}, loss = {:.4f})'
-        #         .format(epoch, loss_record['att_h_val'])')
-        #     torch.save(model.state_dict(),'MTKGNN/KGMTL4Rec/saved_model/model_{}_{}_{}.pt'.format(epochs, batch_size,learning_rate))
-    #plot_learning_curve(loss_record, title='deep model')
+        
     #test model
     model.eval()
-    table = evaluation(valid_loader_triplets, valid_loader_head_attr, valid_loader_tail_attr, device , mymodel=model) 
-    # # save_pred(preds1, 'predicted_result/epoch{}_preds_rel.csv'.format(epochs))
-    save_result(table, 'exp/predicted_result/minmax_ast_{}_{}_50_100preds_att_head.csv'.format(epochs,batch_size)) 
-    # # save_pred(preds3, 'predicted_result/epoch{}_preds_att_tail.csv'.format(epochs))
+    table = eval_headattr(valid_loader_head_attr, device , mymodel=model) 
+    save_result(table, 'exp_ast/predicted_result/std_ast_{}_{}_50_64preds_att_head.csv'.format(epochs,batch_size)) 
+
     # 
 
 if __name__ == '__main__':

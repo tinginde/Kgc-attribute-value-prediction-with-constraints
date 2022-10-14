@@ -30,14 +30,16 @@ class KGMTL_Data():
         
         ## Load Data for Attnet
         attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_ver06')
-        self.attri_data = attri_data[['e','a','minmax_v']]
+        #var=var=['P1082','P4010','P2299','P569','P570','P2046','P2032','P2031','P2048','P625_Latitude','P625_Longtiude']
+        #attri_data = attri_data[attri_data.a.isin(var)]
+        self.attri_data = attri_data[['e','a','std_v']]
         #self.attri_data = attri_data.to_numpy() 
 #       self.attri_data = self.attri_data.sample(frac=0.5, random_state=42)
-        self.train_attri_data, self.valid_attri_data = train_test_split(self.attri_data, test_size=0.2,stratify=self.attri_data['a'],
+        self.train_attri_data, valid_attri_data = train_test_split(self.attri_data, test_size=0.2,stratify=self.attri_data['a'],
                                                                     random_state=802)
 
-        #self.valid_attri_data, self.test_attri_data = train_test_split(valid_attri_data, test_size=0.5,stratify=valid_attri_data['a'],random_state=802)   
-        #self.att2df = pd.read_pickle(ds_path + 'LitWD48K/one_attri_one_df.pkl') 
+        self.valid_attri_data, self.test_attri_data = train_test_split(valid_attri_data, test_size=0.5,stratify=valid_attri_data['a'],random_state=802)   
+
 
         ## Group Entities, relations, attributes
         self.entities = pd.read_csv(ds_path + 'Entities/entity_labels_en.txt', sep='\t', names=['label', 'name'])
@@ -139,8 +141,8 @@ class KGMTL_Data():
         # X_all_pos_r: triples filter out same entities in valid and test sets
         # X_all_pos: no filter out
         #rel_data = self.train_rel_data
-        #test_att_all=pd.concat([self.valid_attri_data], ignore_index=True)
-        overlap = np.intersect1d(rel_data['s'].unique(),self.valid_attri_data['e'].unique())
+        test_att_all=pd.concat([self.valid_attri_data,self.test_attri_data], ignore_index=True)
+        overlap = np.intersect1d(rel_data['s'].unique(),test_att_all['e'].unique())
         rel_data_nooverlap = rel_data[~rel_data['s'].isin(overlap)]
         rel_data_nooverlap = rel_data_nooverlap.drop_duplicates(subset=['s','p'],keep='last')
         X_all_pos_r = np.empty([rel_data_nooverlap.shape[0], rel_data_nooverlap.shape[1]], dtype=int)
@@ -210,4 +212,17 @@ class KGMTL_Data():
         
         return loader_triplets, loader_head_attr, loader_tail_attr
 
+    def eval_loader(self, attr_data, batch_size):
+        attr_data['e'] = attr_data['e'].map(self.dict_all_2_idx)
+        attr_data['a'] = attr_data['a'].map(self.dict_all_2_idx)
+        X_list_head_attr = attr_data[['e','a']].values
+        y_list_head_attr = attr_data.iloc[:,2].values
+        # x = [[e,a],[e,a]...] y=[[v],[v]...]
+        X_head_attr = np.array(X_list_head_attr).reshape((len(X_list_head_attr), 2))
+        y_head_attr = np.array(y_list_head_attr).reshape((len(X_list_head_attr), 1))
+        x_tensor_head_attr = torch.from_numpy(X_head_attr)
+        y_tensor_head_attr = torch.from_numpy(y_head_attr)
+        data_head_attr = TensorDataset(x_tensor_head_attr, y_tensor_head_attr)
+        loader_head_attr = DataLoader(dataset=data_head_attr, batch_size=batch_size, shuffle=False)
+        return loader_head_attr
 

@@ -25,10 +25,10 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=50)
-    parser.add_argument('-batch_size', type=float, required=False, default=200
+    parser.add_argument('-epochs', type=int, required=False, default=500)
+    parser.add_argument('-batch_size', type=float, required=False, default=1000
     )
-    parser.add_argument('-lr', type=float, required=False, default=0.001)
+    parser.add_argument('-lr', type=float, required=False, default=0.0001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
     parser.add_argument('-emb_size', type=int, required=False, default=128)
     parser.add_argument('-hidden_size', type=int, required=False, default=64)

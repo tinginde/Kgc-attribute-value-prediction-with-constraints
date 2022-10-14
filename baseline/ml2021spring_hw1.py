@@ -27,6 +27,9 @@ import numpy as np
 import csv
 import os
 
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+
 from tqdm import tqdm
 
 # For plotting
@@ -50,46 +53,6 @@ def get_device():
     ''' Get device (if GPU is available, use GPU) '''
     return 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def plot_learning_curve(loss_record, title=''):
-    ''' Plot learning curve of your DNN (train & dev loss) '''
-    total_steps = len(loss_record['train'])
-    x_1 = range(total_steps)
-    x_2 = x_1[::len(loss_record['train']) // len(loss_record['dev'])]
-    figure(figsize=(6, 4))
-    plt.plot(x_1, loss_record['train'], c='tab:red', label='train')
-    plt.plot(x_2, loss_record['dev'], c='tab:cyan', label='dev')
-    plt.ylim(0.0, 5.)
-    plt.xlabel('Training steps')
-    plt.ylabel('MSE loss')
-    plt.title('Learning curve of {}'.format(title))
-    plt.legend()
-    plt.show()
-
-
-def plot_pred(dv_set, model, device, lim=35., preds=None, targets=None):
-    ''' Plot prediction of your DNN '''
-    if preds is None or targets is None:
-        model.eval()
-        preds, targets = [], []
-        for x, y in dv_set:
-            x, y = x.to(device), y.to(device)
-            with torch.no_grad():
-                pred = model(x)
-                preds.append(pred.detach().cpu())
-                targets.append(y.detach().cpu())
-        preds = torch.cat(preds, dim=0).numpy()
-        targets = torch.cat(targets, dim=0).numpy()
-
-    figure(figsize=(5, 5))
-    plt.scatter(targets, preds, c='r', alpha=0.5)
-    plt.plot([-0.2, lim], [-0.2, lim], c='b')
-    plt.xlim(-0.2, lim)
-    plt.ylim(-0.2, lim)
-    plt.xlabel('ground truth value')
-    plt.ylabel('predicted value')
-    plt.title('Ground Truth v.s. Prediction')
-    plt.show()
-
 """# **Preprocess**
 
 We have three kinds of datasets:
@@ -99,8 +62,9 @@ We have three kinds of datasets:
 """
 
 attri_data = pd.read_csv('LiterallyWikidata/files_needed/numeric_literals_ver06')
+num_lit=np.load('LiterallyWikidata/files_needed/num_lit_std.npy')
+attri_data=attri_data[['e','a','std_v']]
 
-x = attri_data.loc[:,['e','a']].to_numpy()
 ## constraint needed:
 # pop_idx = dict_all_2_idx['P1082']
 # gdp = dict_all_2_idx['P4010']
@@ -147,23 +111,27 @@ y= attri_data.loc[:,'std_v'].to_numpy()
 """
 
 device = get_device()                 # get the current available device ('cpu' or 'cuda')
-os.makedirs('models', exist_ok=True)  # The trained model will be saved to ./models/
+os.makedirs('models_ver2/', exist_ok=True)  # The trained model will be saved to ./models/
 
 # TODO: How to tune these hyper-parameters to improve your model's performance?
 config = {
     'n_epochs': 500,                # maximum number of epochs
     'batch_size': 200,               # mini-batch size for dataloader
     'learning_rate':0.001,
-    'early_stop': 15,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': 'models/model.pth' , # your model will be saved here
+    'early_stop': 30,               # early stopping epochs (the number epochs since your model's last improvement)
+    'save_path': 'models_ver2/' , # your model will be saved here
 }
 
 
 
 
 from sklearn.model_selection import train_test_split
-X_trainset, X_testset, y_trainset, y_testset = train_test_split(x_data, y,test_size=0.2, random_state=802)
-
+X_trainset, X_validset, y_trainset, y_validset = train_test_split(x_data, y,test_size=0.2, random_state=802)
+X_validset, X_testset, y_validset, y_testset = train_test_split(X_validset, y_validset,test_size=0.5, random_state=802)
+# train_attri_data, valid_attri_data = train_test_split(attri_data, test_size=0.2,stratify=attri_data['a'],
+#                                                                     random_state=802)
+# valid_attri_data, test_attri_data = train_test_split(valid_attri_data, test_size=0.5,stratify=valid_attri_data['a'],
+#                                                                     random_state=802)
 
 
 """## **Dataset**
@@ -203,9 +171,9 @@ A `DataLoader` loads data from a given `Dataset` into batches.
 """
 
 train_set =KGMTL_Data(X_trainset,y_trainset)
-valid_set =KGMTL_Data(X_testset,y_testset)
+valid_set =KGMTL_Data(X_validset,y_validset)
 train_loader = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True, pin_memory=True)
-valid_loader = DataLoader(valid_set, batch_size=config['batch_size'], shuffle=True, pin_memory=True)
+valid_loader = DataLoader(valid_set, batch_size=config['batch_size'], shuffle=False, pin_memory=True)
 
 """# **Deep Neural Network**
 
@@ -223,14 +191,17 @@ class NeuralNet(nn.Module):
         # Define your neural network here
         # TODO: How to modify this model to achieve better performance?
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 100),
-            nn.Tanh(),
+            nn.Linear(input_dim, 256),
+            nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(100, 100),
-            nn.Tanh(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(100, 64),
-            nn.Tanh(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(128, 64),
+            nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(64, 1),
         )
@@ -245,7 +216,7 @@ class NeuralNet(nn.Module):
     def cal_loss(self, pred, target):
         ''' Calculate loss '''
         # TODO: you may implement L1/L2 regularization here
-        return torch.sqrt(self.criterion(pred, target))
+        return self.criterion(pred, target)
 
 """# **Train/Dev/Test**
 
@@ -258,10 +229,10 @@ def train(tr_set, dv_set, model, config, device):
     n_epochs = config['n_epochs']  # Maximum number of epochs
 
     # Setup optimizer
-    optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9, weight_decay=1e-6) 
+    optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'],momentum=0.9, weight_decay=1e-6) 
 
-    min_mse = 10.**15
-    loss_record = {'train': [], 'dev': []}      # for recording training loss
+    min_mse = 10.**2
+    loss_record = {'train_batch':[],'train': [], 'dev': []}      # for recording training loss
     early_stop_cnt = 0
     epoch = 0
 
@@ -270,7 +241,7 @@ def train(tr_set, dv_set, model, config, device):
         model.train() 
         
         # tqdm is a package to visualize your training progress.
-        train_pbar = tqdm(train_loader, position=0, leave=True)
+        train_pbar = tqdm(tr_set, position=0, leave=True)
         
         # set model to training mode
         for x, y in train_pbar:                     # iterate through the dataloader
@@ -281,6 +252,8 @@ def train(tr_set, dv_set, model, config, device):
             mse_loss.backward()                 # compute gradient (backpropagation)
             optimizer.step()                    # update model with optimizer
             loss_record['train'].append(mse_loss.detach().cpu().item())
+        print('Epoch = {:4d}, Training loss = {:.4f}'.format(epoch + 1,np.mean(loss_record['train'])))
+        loss_record['train_batch'].append(np.mean(loss_record['train']))
 
         # After each epoch, test your model on the validation (development) set.
         dev_mse = dev(dv_set, model, device)
@@ -289,19 +262,34 @@ def train(tr_set, dv_set, model, config, device):
             min_mse = dev_mse
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch + 1, min_mse))
-            torch.save(model.state_dict(), config['save_path'])  # Save model to specified path
+            torch.save(model.state_dict(), config['save_path']+'model_e500.pt')  # Save model to specified path
             early_stop_cnt = 0
         else:
             early_stop_cnt += 1
 
         epoch += 1
         loss_record['dev'].append(dev_mse)
-        if early_stop_cnt > config['early_stop']:
-            # Stop training if your model stops improving for "config['early_stop']" epochs.
-            break
+        # if early_stop_cnt > config['early_stop']:
+        #     # Stop training if your model stops improving for "config['early_stop']" epochs.
+        #     break
 
     print('Finished training after {} epochs'.format(epoch))
     return min_mse, loss_record
+
+def eval_matrics(y_test, y_pred):
+
+    MSE = mean_squared_error(y_test, y_pred)
+    print('MSE=',MSE)
+    RMSE =np.sqrt(MSE)
+    print('RMSE=',RMSE)
+    MAE= mean_absolute_error(y_test, y_pred)
+    print('MAE=',MAE)
+
+    R2=1-MSE/np.var(y_test)
+    print("R2=", R2)
+
+
+
 
 """## **Validation**"""
 
@@ -322,7 +310,7 @@ def dev(dv_set, model, device):
 
 def test(tt_set, model, device):
     model.eval()                                # set model to evalutation mode
-    preds = []; ents=[]; atts=[]; y_b=[]
+    preds = []; y_b=[]
     for x,y in tt_set:                            # iterate through the dataloader
         x ,y = x.to(device), y.to(device)                          # move data to device (cpu/cuda)
         with torch.no_grad():                   # disable gradient calculation
@@ -332,42 +320,8 @@ def test(tt_set, model, device):
     preds = torch.cat(preds, dim=0).numpy().reshape(-1,1)     # concatenate all predictions and convert to a numpy array
     y_b= torch.cat(y_b,0).numpy().reshape(-1,1) 
     table  = np.concatenate((preds, y_b),axis=1)
-    print('from eval.py',table)
-    #return preds
-    #         with torch.no_grad():
-    #         pred_att_h = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
-    #         pred_head.append(pred_att_h.detach().cpu())
-    #         target_head.append(y)
-    #         ent.append(x[:,0].detach().cpu())
-    #         attr.append(x[:,1].detach().cpu())
-    # preds_head = torch.cat(pred_head,0).numpy() 
-    # targets_head = torch.cat(target_head,0).numpy()
-    # attrs= torch.cat(attr,0).numpy().reshape((-1,1))
-    # evs= torch.cat(ent,0).numpy().reshape((-1,1))
-    # #print('from eval.py',preds_head, sep='\t')
-    # #return preds_head, targets_head
-    # table = np.concatenate((evs, attrs, preds_head, targets_head),axis=1)
-    # return table 
-
-
-
-"""# **Load data and model**"""
-
-model = NeuralNet(256).to(device)  # Construct model and move to device
-print(model)
-"""# **Start Training!**"""
-
-model_loss, model_loss_record = train(train_loader, valid_loader, model, config, device)
-
-# plot_learning_curve(model_loss_record, title='deep model')
-
-# model_loss
-
-# del model
-# model = NeuralNet(tr_set.dataset.dim).to(device)
-# ckpt = torch.load(config['save_path'], map_location='cpu')  # Load your best model
-# model.load_state_dict(ckpt)
-# plot_pred(dv_set, model, device)  # Show prediction on the validation set
+    eval_matrics(y_b,preds)
+    return table
 
 """# **Testing**
 The predictions of your model on testing set will be stored at `pred.csv`.
@@ -378,9 +332,32 @@ def save_pred(preds, file):
     print('Saving results to {}'.format(file))
     with open(file, 'w') as fp:
         writer = csv.writer(fp)
-        writer.writerow(['id', 'pred_y'])
-        for i, p in enumerate(preds):
-            writer.writerow([i, p])
+        writer.writerow(['id', 'pred_y','target_y'])
+        for i, [p,t] in enumerate(preds[:]):
+            writer.writerow([i, p, t])
 
-preds = test(valid_loader, model, device)  # predict COVID-19 cases with your model
-print(preds)         # save prediction file to pred.csv
+"""# **Load data and model**"""
+
+model = NeuralNet(256).to(device)  # Construct model and move to device
+print(model)
+"""# **Start Training!**"""
+import pickle
+model_loss, model_loss_record = train(train_loader, valid_loader, model, config, device)
+
+# save loss record for plt
+with open('models_ver2/linear_e500.pickle','wb') as fw:
+    pickle.dump(model_loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
+# plot_learning_curve(model_loss_record, title='deep model')
+
+print('model_loss min_mse:',model_loss)
+
+del model
+model = NeuralNet(256).to(device)
+ckpt = torch.load('models_ver2/model_e500.pt', map_location='cpu')  # Load your best model
+model.load_state_dict(ckpt)
+#plot_pred(dv_set, model, device)  # Show prediction on the validation set
+
+
+
+preds = test(valid_loader, model, device)  # predict 
+save_pred(preds, 'models_ver2/preds_result_e500')       # save prediction file to pred.csv
