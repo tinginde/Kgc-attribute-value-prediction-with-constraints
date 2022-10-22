@@ -27,6 +27,9 @@ import numpy as np
 import csv
 import os
 
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+
 from tqdm import tqdm
 
 # For plotting
@@ -57,32 +60,50 @@ We have three kinds of datasets:
 * `dev`: for validation
 * `test`: for testing (w/o target value)
 """
-path = 'LiterallyWikidata/files_needed/numeric_literals_ver06'
-big_table = 'LiterallyWikidata/files_needed/num_lit.npy'
+
 attri_data = pd.read_csv('LiterallyWikidata/files_needed/numeric_literals_ver06')
-
-x = attri_data[['e','a']].values
-y= attri_data['std_v'].values
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(x, y,test_size=0.2, random_state=802,stratify=x[:,1])
-
-num_lit = np.load(big_table)
+# num_lit=np.load('LiterallyWikidata/files_needed/num_lit_std.npy')
+# attri_data=attri_data[['e','a','v']]
 
 ## constraint needed:
-# pop_idx = att2idx['P1082']
-# gdp = att2idx['P4010']
-# nominal_gdp = att2idx['P2131']
-# nominal_gdp_per = att2idx['P2132']
-# gdp_per = att2idx['P2299']
-# date_of_birth = att2idx['P569']
-# date_of_death = att2idx['P570']
+# pop_idx = dict_all_2_idx['P1082']
+# gdp = dict_all_2_idx['P4010']
+# nominal_gdp = dict_all_2_idx['P2131']
+# nominal_gdp_per = dict_all_2_idx['P2132']
+# gdp_per = dict_all_2_idx['P2299']
+# date_of_birth = dict_all_2_idx['P569']
+# date_of_death = dict_all_2_idx['P570']
 # area = ['P2046']
-# net_profit = att2idx['P2295']
-# retirement_age = att2idx['P3001']
-# age_of_majority = att2idx['P2997']
-# work_start = att2idx['P2031']
-# work_end = att2idx['P2032']
+# net_profit = dict_all_2_idx['P2295']
+# retirement_age = dict_all_2_idx['P3001']
+# age_of_majority = dict_all_2_idx['P2997']
+# work_start = dict_all_2_idx['P2031']
+# work_end = dict_all_2_idx['P2032']
 
+## Load pretrain embedding
+emb_ent = torch.load('LiterallyWikidata/files_needed/pretrained_kge/pretrained_complex_entemb.pt')
+list_ent_ids =[]
+with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
+    for line in f:
+        list_ent_ids.append(line.strip())
+## Preparing ent embedding
+ent2idx = {e:i for i,e in enumerate(list_ent_ids)}
+attri_data['ent_idx']= attri_data['e'].map(ent2idx)
+embedding_e = torch.nn.Embedding.from_pretrained(emb_ent)
+input_e = torch.LongTensor(attri_data['ent_idx'].to_numpy())
+
+entity_embedding = embedding_e(input_e)
+## Preparing att embedding
+att2idx = {a:i for i,a in enumerate(attri_data['a'].unique())}
+attri_data['a_idx']=attri_data['a'].map(att2idx)
+embedding_a = torch.nn.Embedding(len(attri_data['a'].unique()),128,padding_idx=0)
+input_a = torch.LongTensor(attri_data['a_idx'].to_numpy())
+
+attribute_embedding = embedding_a(input_a)
+## concat two embedding
+x_data = torch.cat([entity_embedding,attribute_embedding],dim=1).detach().numpy()
+
+y= attri_data.loc[:,'std_v'].to_numpy()
 
 """# **Setup Hyper-parameters**
 
@@ -90,70 +111,57 @@ num_lit = np.load(big_table)
 """
 
 device = get_device()                 # get the current available device ('cpu' or 'cuda')
-os.makedirs('models_ver2', exist_ok=True)  # The trained model will be saved to ./models/
+os.makedirs('models_nohidden/', exist_ok=True)  # The trained model will be saved to ./models/
 
-
+# TODO: How to tune these hyper-parameters to improve your model's performance?
 config = {
-    'n_epochs': 25,                # maximum number of epochs
+    'n_epochs': 200,                # maximum number of epochs
     'batch_size': 200,               # mini-batch size for dataloader
     'learning_rate':0.001,
-    'early_stop': 3,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': 'models/model.pth' , # your model will be saved here
+    'early_stop': 15,               # early stopping epochs (the number epochs since your model's last improvement)
+    'save_path': 'models_nohidden/' , # your model will be saved here
 }
+
+
+
+
+from sklearn.model_selection import train_test_split
+X_trainset, X_validset, y_trainset, y_validset = train_test_split(x_data, y,test_size=0.2, random_state=802)
+X_validset, X_testset, y_validset, y_testset = train_test_split(X_validset, y_validset,test_size=0.5, random_state=802)
+# train_attri_data, valid_attri_data = train_test_split(attri_data, test_size=0.2,stratify=attri_data['a'],
+#                                                                     random_state=802)
+# valid_attri_data, test_attri_data = train_test_split(valid_attri_data, test_size=0.5,stratify=valid_attri_data['a'],
+#                                                                     random_state=802)
 
 
 """## **Dataset**
 
 """
-list_ent_ids =[]
 
 class KGMTL_Data(Dataset):
     '''
     x: Features.
     y: Targets, if none, do prediction.
     '''
-    def __init__(self, x, y):
-        #attri_data = pd.read_csv(path)
+    def __init__(self, x, y=None):
         if y is None:
             self.y = y
         else:
-            self.y = y
-        self.x = x
-
-        ## Preparing ent embedding (from pre-trained)
-        emb_ent = torch.load('LiterallyWikidata/files_needed/pretrained_kge/pretrained_complex_entemb.pt')
-        self.embedding_e = torch.nn.Embedding.from_pretrained(emb_ent)
-
-        with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
-            self.ent2idx = {line.strip(): i for i, line in enumerate(f)}
-
-        print(len(self.ent2idx))
-
-
-        ## Preparing att embedding
-
-        with open('LiterallyWikidata/files_needed/attribute.txt','r') as fr:
-            self.att2idx = {line.strip(): i for i, line in enumerate(fr)}
-        self.embedding_a = torch.nn.Embedding(len(self.att2idx),128,padding_idx=0)
-
+            self.y = torch.FloatTensor(y)
+        self.x = torch.FloatTensor(x)
+        
 
     def __getitem__(self, idx):
-        e = self.ent2idx[self.x[idx],0]
-        input_e = torch.LongTensor(e)
-        
-        print(self.x[idx,0])
-        print(input_e)
-        entity_embedding = self.embedding_e(input_e)
-        
-        input_a = torch.LongTensor(self.att2idx[self.x[idx,1]])
-        attribute_embedding = self.embedding_a(input_a)
-
-        ## concat two embedding 
-        self.input = torch.cat([entity_embedding,attribute_embedding],dim=1)
-        return self.x[idx,0],self.x[idx,1],self.y[idx]
+        if self.y is None:
+            return self.x[idx]
+        else:
+            return self.x[idx], self.y[idx]
 
     def __len__(self):
         return len(self.x)
+
+
+
 
 
 """## **DataLoader**
@@ -162,10 +170,10 @@ A `DataLoader` loads data from a given `Dataset` into batches.
 
 """
 
-train_set =KGMTL_Data(X_train,y_train)
-valid_set =KGMTL_Data(X_test,y_test)
+train_set =KGMTL_Data(X_trainset,y_trainset)
+valid_set =KGMTL_Data(X_validset,y_validset)
 train_loader = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True, pin_memory=True)
-valid_loader = DataLoader(valid_set, batch_size=config['batch_size'], shuffle=True, pin_memory=True)
+valid_loader = DataLoader(valid_set, batch_size=config['batch_size'], shuffle=False, pin_memory=True)
 
 """# **Deep Neural Network**
 
@@ -183,11 +191,7 @@ class NeuralNet(nn.Module):
         # Define your neural network here
         # TODO: How to modify this model to achieve better performance?
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 100),
-            nn.ReLU(),
-            nn.Linear(100, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(input_dim, 1)
         )
 
         # Mean squared error loss
@@ -200,7 +204,7 @@ class NeuralNet(nn.Module):
     def cal_loss(self, pred, target):
         ''' Calculate loss '''
         # TODO: you may implement L1/L2 regularization here
-        return torch.sqrt(self.criterion(pred, target))
+        return self.criterion(pred, target)
 
 """# **Train/Dev/Test**
 
@@ -213,10 +217,10 @@ def train(tr_set, dv_set, model, config, device):
     n_epochs = config['n_epochs']  # Maximum number of epochs
 
     # Setup optimizer
-    optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9, weight_decay=1e-6) 
+    optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'],momentum=0.9, weight_decay=1e-6) 
 
-    min_mse = 10.**15
-    loss_record = {'train': [], 'dev': []}      # for recording training loss
+    min_mse = 10.**25
+    loss_record = {'train_batch':[],'train': [], 'dev': []}      # for recording training loss
     early_stop_cnt = 0
     epoch = 0
 
@@ -225,7 +229,7 @@ def train(tr_set, dv_set, model, config, device):
         model.train() 
         
         # tqdm is a package to visualize your training progress.
-        train_pbar = tqdm(train_loader, position=0, leave=True)
+        train_pbar = tqdm(tr_set, position=0, leave=True)
         
         # set model to training mode
         for x, y in train_pbar:                     # iterate through the dataloader
@@ -236,6 +240,8 @@ def train(tr_set, dv_set, model, config, device):
             mse_loss.backward()                 # compute gradient (backpropagation)
             optimizer.step()                    # update model with optimizer
             loss_record['train'].append(mse_loss.detach().cpu().item())
+        print('Epoch = {:4d}, Training loss = {:.4f}'.format(epoch + 1,np.mean(loss_record['train'])))
+        loss_record['train_batch'].append(np.mean(loss_record['train']))
 
         # After each epoch, test your model on the validation (development) set.
         dev_mse = dev(dv_set, model, device)
@@ -244,19 +250,34 @@ def train(tr_set, dv_set, model, config, device):
             min_mse = dev_mse
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch + 1, min_mse))
-            torch.save(model.state_dict(), config['save_path'])  # Save model to specified path
+            torch.save(model.state_dict(), config['save_path']+'model_nohidden.pt')  # Save model to specified path
             early_stop_cnt = 0
         else:
             early_stop_cnt += 1
 
         epoch += 1
         loss_record['dev'].append(dev_mse)
-        if early_stop_cnt > config['early_stop']:
-            # Stop training if your model stops improving for "config['early_stop']" epochs.
-            break
+        # if early_stop_cnt > config['early_stop']:
+        #     # Stop training if your model stops improving for "config['early_stop']" epochs.
+        #     break
 
     print('Finished training after {} epochs'.format(epoch))
     return min_mse, loss_record
+
+def eval_matrics(y_test, y_pred):
+
+    MSE = mean_squared_error(y_test, y_pred)
+    print('MSE=',MSE)
+    RMSE =np.sqrt(MSE)
+    print('RMSE=',RMSE)
+    MAE= mean_absolute_error(y_test, y_pred)
+    print('MAE=',MAE)
+
+    R2=1-MSE/np.var(y_test)
+    print("R2=", R2)
+
+
+
 
 """## **Validation**"""
 
@@ -277,48 +298,18 @@ def dev(dv_set, model, device):
 
 def test(tt_set, model, device):
     model.eval()                                # set model to evalutation mode
-    preds = []
+    preds = []; y_b=[]
     for x,y in tt_set:                            # iterate through the dataloader
         x ,y = x.to(device), y.to(device)                          # move data to device (cpu/cuda)
         with torch.no_grad():                   # disable gradient calculation
             pred = model(x)                     # forward pass (compute output)
-            preds.append(pred.detach().cpu())   # collect prediction
-    preds = torch.cat(preds, dim=0).numpy()     # concatenate all predictions and convert to a numpy array
-    return preds
-    #         with torch.no_grad():
-    #         pred_att_h = mymodel.AttrNet_h_forward(x[:,0], x[:,1])
-    #         pred_head.append(pred_att_h.detach().cpu())
-    #         target_head.append(y)
-    #         ent.append(x[:,0].detach().cpu())
-    #         attr.append(x[:,1].detach().cpu())
-    # preds_head = torch.cat(pred_head,0).numpy() 
-    # targets_head = torch.cat(target_head,0).numpy()
-    # attrs= torch.cat(attr,0).numpy().reshape((-1,1))
-    # evs= torch.cat(ent,0).numpy().reshape((-1,1))
-    # #print('from eval.py',preds_head, sep='\t')
-    # #return preds_head, targets_head
-    # table = np.concatenate((evs, attrs, preds_head, targets_head),axis=1)
-    # return table 
-
-
-
-"""# **Load data and model**"""
-
-model = NeuralNet(256).to(device)  # Construct model and move to device
-print(model)
-"""# **Start Training!**"""
-
-model_loss, model_loss_record = train(train_loader, valid_loader, model, config, device)
-
-# plot_learning_curve(model_loss_record, title='deep model')
-
-# model_loss
-
-# del model
-# model = NeuralNet(tr_set.dataset.dim).to(device)
-# ckpt = torch.load(config['save_path'], map_location='cpu')  # Load your best model
-# model.load_state_dict(ckpt)
-# plot_pred(dv_set, model, device)  # Show prediction on the validation set
+            preds.append(pred.detach().cpu())
+            y_b.append(y.detach().cpu())   # collect prediction
+    preds = torch.cat(preds, dim=0).numpy().reshape(-1,1)     # concatenate all predictions and convert to a numpy array
+    y_b= torch.cat(y_b,0).numpy().reshape(-1,1) 
+    table  = np.concatenate((preds, y_b),axis=1)
+    eval_matrics(y_b,preds)
+    return table
 
 """# **Testing**
 The predictions of your model on testing set will be stored at `pred.csv`.
@@ -329,9 +320,32 @@ def save_pred(preds, file):
     print('Saving results to {}'.format(file))
     with open(file, 'w') as fp:
         writer = csv.writer(fp)
-        writer.writerow(['id', 'pred_y'])
-        for i, p in enumerate(preds):
-            writer.writerow([i, p])
+        writer.writerow(['id', 'pred_y','target_y'])
+        for i, [p,t] in enumerate(preds[:]):
+            writer.writerow([i, p, t])
 
-preds = test(valid_loader, model, device)  # predict COVID-19 cases with your model
-print(preds)         # save prediction file to pred.csv
+"""# **Load data and model**"""
+
+model = NeuralNet(256).to(device)  # Construct model and move to device
+print(model)
+"""# **Start Training!**"""
+import pickle
+model_loss, model_loss_record = train(train_loader, valid_loader, model, config, device)
+
+# save loss record for plt
+with open(config['save_path']+'model_nohideen.pickle','wb') as fw:
+    pickle.dump(model_loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
+# plot_learning_curve(model_loss_record, title='deep model')
+
+print('model_loss min_mse:',model_loss)
+
+del model
+model = NeuralNet(256).to(device)
+ckpt = torch.load(config['save_path']+'model_nohidden.pt', map_location='cpu')  # Load your best model
+model.load_state_dict(ckpt)
+#plot_pred(dv_set, model, device)  # Show prediction on the validation set
+
+
+
+preds = test(valid_loader, model, device)  # predict 
+save_pred(preds, config['save_path']+'preds_result_model_nohidden')     # save prediction file to pred.csv

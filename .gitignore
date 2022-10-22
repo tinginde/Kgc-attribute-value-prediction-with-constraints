@@ -43,4 +43,7 @@ models_ver2
 models_ver3
 baseline/ml_datasplit_ver2.py
 baseline/ml2021spring_hw1_nonorm.py
+models_layer
+models_layer_tanh
+models_nohidden
 
