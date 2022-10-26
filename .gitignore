@@ -46,4 +46,6 @@ baseline/ml2021spring_hw1_nonorm.py
 models_layer
 models_layer_tanh
 models_nohidden
+models_3layer
+models_2layer
 
