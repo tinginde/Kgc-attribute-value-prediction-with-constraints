@@ -48,4 +48,6 @@ models_layer_tanh
 models_nohidden
 models_3layer
 models_2layer
-
+baseline/runs
+baseline/models_var
+baseline/models
