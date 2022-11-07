@@ -65,12 +65,7 @@ attri_data = pd.read_csv('LiterallyWikidata/files_needed/numeric_literals_ver06'
 num_lit=np.load('LiterallyWikidata/files_needed/num_lit_std.npy')
 attri_data=attri_data[['e','a','std_v']]
 
-## constraint needed:
-# pop_idx = dict_all_2_idx['P1082']
-# gdp = dict_all_2_idx['P4010']
-# nominal_gdp = dict_all_2_idx['P2131']
-# nominal_gdp_per = dict_all_2_idx['P2132']
-# gdp_per = dict_all_2_idx['P2299']
+
 # date_of_birth = dict_all_2_idx['P569']
 # date_of_death = dict_all_2_idx['P570']
 # area = ['P2046']
@@ -81,7 +76,7 @@ attri_data=attri_data[['e','a','std_v']]
 # work_end = dict_all_2_idx['P2032']
 
 ## Load pretrain embedding
-emb_ent = torch.load('LiterallyWikidata/files_needed/pretrained_kge/pretrained_complex_entemb.pt')
+emb_ent = torch.load('LiterallyWikidata/files_needed/pretrained_kge/new_pretrained_complex_entemb.pt')
 list_ent_ids =[]
 with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
     for line in f:
@@ -96,10 +91,16 @@ entity_embedding = embedding_e(input_e)
 ## Preparing att embedding
 att2idx = {a:i for i,a in enumerate(attri_data['a'].unique())}
 attri_data['a_idx']=attri_data['a'].map(att2idx)
-embedding_a = torch.nn.Embedding(len(attri_data['a'].unique()),200,padding_idx=0)
+embedding_a = torch.nn.Embedding(len(attri_data['a'].unique()),256,padding_idx=0)
 input_a = torch.LongTensor(attri_data['a_idx'].to_numpy())
 
 attribute_embedding = embedding_a(input_a)
+
+## constraint needed:
+pop_idx = att2idx['P1082']
+gdp_idx = att2idx['P4010']
+gdp_per_idx = att2idx['P2299']
+print(f'pop_idx:{pop_idx}')
 ## concat two embedding
 x_data = torch.cat([entity_embedding,attribute_embedding],dim=1).detach().numpy()
 
@@ -111,15 +112,14 @@ y= attri_data.loc[:,'std_v'].to_numpy()
 """
 
 device = get_device()                 # get the current available device ('cpu' or 'cuda')
-os.makedirs('models_3layer/', exist_ok=True)  # The trained model will be saved to ./models/
+os.makedirs('models_addcons/', exist_ok=True)  # The trained model will be saved to ./models/
 
-# TODO: How to tune these hyper-parameters to improve your model's performance?
 config = {
-    'n_epochs': 500,                # maximum number of epochs
-    'batch_size': 200,               # mini-batch size for dataloader
+    'n_epochs': 20,                # maximum number of epochs
+    'batch_size': 256,               # mini-batch size for dataloader
     'learning_rate':0.001,
     'early_stop': 15,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': 'models_3layer/' , # your model will be saved here
+    'save_path': 'models_addcons/' , # your model will be saved here
 }
 
 
