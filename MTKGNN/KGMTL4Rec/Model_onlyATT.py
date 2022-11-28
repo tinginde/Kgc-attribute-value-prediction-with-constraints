@@ -68,24 +68,26 @@ class KGMTL(nn.Module):
         self.num_attributes = tot_attribute
 
         ## Initialize Embedding layers
-        self.ent_embeddings = nn.Embedding(tot_entity, emb_size, padding_idx=0)
+        emb_ent = torch.load('LiterallyWikidata/files_needed/pretrained_kge/pretrained_complex_entemb.pt')
+        self.ent_embeddings = nn.Embedding.from_pretrained(emb_ent)
+        #self.ent_embeddings = nn.Embedding(tot_entity, emb_size, padding_idx=0)
         self.rel_embeddings = nn.Embedding(tot_relation, emb_size, padding_idx=0)
         self.att_embeddings = nn.Embedding(tot_attribute, emb_size, padding_idx=0)
         
         # Weights init
-        nn.init.normal_(self.ent_embeddings.weight)
-        nn.init.normal_(self.rel_embeddings.weight)
-        nn.init.normal_(self.att_embeddings.weight)
+        # nn.init.normal_(self.ent_embeddings.weight)
+        # nn.init.normal_(self.rel_embeddings.weight)
+        # nn.init.normal_(self.att_embeddings.weight)
         ### tail, head, relation hidden layers
         ### nn.linear(input_dim, output_dim)
-        self.Mh = nn.Linear(emb_size, hidden_size, bias = False)
-        self.Mr = nn.Linear(emb_size, hidden_size, bias = False)
-        self.Mt = nn.Linear(emb_size, hidden_size, bias = False)
+        self.Mh = nn.Linear(emb_size, hidden_size)
+        self.Mr = nn.Linear(emb_size, hidden_size)
+        self.Mt = nn.Linear(emb_size, hidden_size)
         # ### hidden layer of Structnet
         self.hidden_struct_net_fc = nn.Linear(hidden_size, 1)
         ### head att, and tail att relation hidden layers
-        self.ah = nn.Linear(emb_size, hidden_size, bias = False)
-        self.at = nn.Linear(emb_size, hidden_size, bias = False)
+        self.ah = nn.Linear(emb_size, hidden_size)
+        self.at = nn.Linear(emb_size, hidden_size)
         # ### hidden layer of AttrNet
         self.hidden_attr_net_fc = nn.Linear(hidden_size*2, 1)
         # dropout layer (p=0.2)
@@ -111,19 +113,25 @@ class KGMTL(nn.Module):
         # torch.nn.Linear(hidden_size, 1))
         #self.rh = nn.Linear(emb_size * 2, hidden_size, bias = False) 
 
+        list_ent_ids =[]
+        with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
+            for line in f:
+                list_ent_ids.append(line.strip())
+        self.ent2idx = {e:i for i,e in enumerate(list_ent_ids)}
 
-    # def StructNet_forward(self, h, r, t):
-    #     ## 1st Part of KGMTL4REC -> StructNet
-    #     # x_h, x_r and x_t are the embeddings 
-    #     x_h = self.ent_embeddings(h)
-    #     x_r = self.rel_embeddings(r)
-    #     x_t = self.ent_embeddings(t)
-    #     # # Mh, Mr, Mt are the h,r,t hidden layers 
-    #     # ## hidden_struct_net_fc1 is the struct net hidden layer
-    #     struct_net_fc1 = self.relu(self.hidden_struct_net_fc(self.Mh(x_h) + self.Mr(x_r) + self.Mt(x_t)))
-    #     pred1 = self.dropout(struct_net_fc1)
+    def StructNet_forward(self, h, r, t):
+        ## 1st Part of KGMTL4REC -> StructNet
+        # x_h, x_r and x_t are the embeddings
+        # attri_data['ent_idx'] = attri_data['e'].map(ent2idx) 
+        x_h = self.ent_embeddings(self.ent2idx[h])
+        x_r = self.rel_embeddings(r)
+        x_t = self.ent_embeddings(self.ent2idx[t])
+        # # Mh, Mr, Mt are the h,r,t hidden layers 
+        # ## hidden_struct_net_fc1 is the struct net hidden layer
+        struct_net_fc1 = self.relu(self.hidden_struct_net_fc(self.Mh(x_h) + self.Mr(x_r) + self.Mt(x_t)))
+        pred1 = self.dropout(struct_net_fc1)
 
-    #     return pred1
+        return pred1
     
     def AttrNet_h_forward(self, h, ah):
         ## 2nd part of KGMTL4REC -> AttrNet for head entity
@@ -154,7 +162,7 @@ class KGMTL(nn.Module):
         #     regularization_loss += torch.sum(param ** 2)
         # x_constraint = torch.tensor([x[i][0]*x[i][18] for i in range(len(x))])
         # x_constraint = x_constraint.to(device)          
-        return torch.sqrt(self.criterion(pred, target))
+        return self.criterion(pred, target)
 
     def forward_AST(self,batch_size):
         with open('LiterallyWikidata/files_needed/dict_a2ev.pickle', 'rb') as fr:

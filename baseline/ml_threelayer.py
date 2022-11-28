@@ -26,6 +26,7 @@ import pandas as pd
 import numpy as np
 import csv
 import os
+import math
 
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
@@ -63,7 +64,7 @@ We have three kinds of datasets:
 
 attri_data = pd.read_csv('LiterallyWikidata/files_needed/numeric_literals_ver06')
 num_lit=np.load('LiterallyWikidata/files_needed/num_lit_std.npy')
-attri_data=attri_data[['e','a','std_v']]
+attri_data=attri_data[['e','a','minmax_v']]
 
 ## constraint needed:
 # pop_idx = dict_all_2_idx['P1082']
@@ -92,18 +93,18 @@ attri_data['ent_idx']= attri_data['e'].map(ent2idx)
 embedding_e = torch.nn.Embedding.from_pretrained(emb_ent)
 input_e = torch.LongTensor(attri_data['ent_idx'].to_numpy())
 
-entity_embedding = embedding_e(input_e)
+entity_embedding = embedding_e(input_e)*math.sqrt(2./128)
 ## Preparing att embedding
 att2idx = {a:i for i,a in enumerate(attri_data['a'].unique())}
 attri_data['a_idx']=attri_data['a'].map(att2idx)
 embedding_a = torch.nn.Embedding(len(attri_data['a'].unique()),128,padding_idx=0)
 input_a = torch.LongTensor(attri_data['a_idx'].to_numpy())
 
-attribute_embedding = embedding_a(input_a)
+attribute_embedding = embedding_a(input_a)*math.sqrt(2./128)
 ## concat two embedding
 x_data = torch.cat([entity_embedding,attribute_embedding],dim=1).detach().numpy()
 
-y= attri_data.loc[:,'std_v'].to_numpy()
+y= attri_data.loc[:,"minmax_v"].to_numpy()
 
 """# **Setup Hyper-parameters**
 
@@ -111,15 +112,15 @@ y= attri_data.loc[:,'std_v'].to_numpy()
 """
 
 device = get_device()                 # get the current available device ('cpu' or 'cuda')
-os.makedirs('models_3layer/', exist_ok=True)  # The trained model will be saved to ./models/
+os.makedirs('models_minmax/', exist_ok=True)  # The trained model will be saved to ./models/
 
 # TODO: How to tune these hyper-parameters to improve your model's performance?
 config = {
     'n_epochs': 500,                # maximum number of epochs
     'batch_size': 200,               # mini-batch size for dataloader
-    'learning_rate':0.001,
-    'early_stop': 15,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': 'models_3layer/' , # your model will be saved here
+    'learning_rate':0.0001,
+    'early_stop': 30,               # early stopping epochs (the number epochs since your model's last improvement)
+    'save_path': 'models_minmax/' , # your model will be saved here
 }
 
 
@@ -203,7 +204,7 @@ class NeuralNet(nn.Module):
             # nn.Linear(128, 64),
             # nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.Linear(64, 1)
+            nn.Linear(64, 1),
         )
 
         # Mean squared error loss
@@ -231,7 +232,7 @@ def train(tr_set, dv_set, model, config, device):
     # Setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-6) 
 
-    min_mse = 10.**10
+    min_mse = math.inf
     loss_record = {'train_batch':[],'train': [], 'dev': []}      # for recording training loss
     early_stop_cnt = 0
     epoch = 0
@@ -246,8 +247,9 @@ def train(tr_set, dv_set, model, config, device):
         # set model to training mode
         for x, y in train_pbar:                     # iterate through the dataloader
             optimizer.zero_grad()               # set gradient to zero
-            x, y = x.to(device), y.to(device)   # move data to device (cpu/cuda)
+            x, y = x.to(device), y.to(device)   # move data to device (cpu/cuda)            
             pred = model(x)                     # forward pass (compute output)
+            #print(f"-------pred:{pred}---------y:{y}----------")
             mse_loss = model.cal_loss(pred, y)  # compute loss
             mse_loss.backward()                 # compute gradient (backpropagation)
             optimizer.step()                    # update model with optimizer
@@ -262,7 +264,7 @@ def train(tr_set, dv_set, model, config, device):
             min_mse = dev_mse
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch + 1, min_mse))
-            torch.save(model.state_dict(), config['save_path']+'model_3layer_e500.pt')  # Save model to specified path
+            torch.save(model.state_dict(), config['save_path']+'model_3layer_kaiming.pt')  # Save model to specified path
             early_stop_cnt = 0
         else:
             early_stop_cnt += 1
@@ -338,14 +340,14 @@ def save_pred(preds, file):
 
 """# **Load data and model**"""
 
-model = NeuralNet(192).to(device)  # Construct model and move to device
+model = NeuralNet(256).to(device)  # Construct model and move to device
 print(model)
 """# **Start Training!**"""
 import pickle
 model_loss, model_loss_record = train(train_loader, valid_loader, model, config, device)
 
 # save loss record for plt
-with open(config['save_path']+'model_3layer_e500.pickle','wb') as fw:
+with open(config['save_path']+'model_3layer_kaiming.pickle','wb') as fw:
     pickle.dump(model_loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
 # plot_learning_curve(model_loss_record, title='deep model')
 
@@ -353,11 +355,11 @@ print('model_loss min_mse:',model_loss)
 
 del model
 model = NeuralNet(256).to(device)
-ckpt = torch.load(config['save_path']+'model_3layer_e500.pt', map_location='cpu')  # Load your best model
+ckpt = torch.load(config['save_path']+'model_3layer_kaiming.pt', map_location='cpu')  # Load your best model
 model.load_state_dict(ckpt)
 #plot_pred(dv_set, model, device)  # Show prediction on the validation set
 
 
 
 preds = test(valid_loader, model, device)  # predict 
-save_pred(preds, config['save_path']+'preds_result_model_3layer_e500')       # save prediction file to pred.csv
+save_pred(preds, config['save_path']+'preds_result_model_3layer_kaiming')       # save prediction file to pred.csv

@@ -29,27 +29,40 @@ class KGMTL_Data():
         self.test_rel_data = pd.read_csv(ds_path + 'LitWD48K/test.txt', sep='\t', names=['s', 'p', 'o'])
         
         ## Load Data for Attnet
-        attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_ver06')
+        train_attri_data = pd.read_csv('LiterallyWikidata/files_needed/train_attri_data_minmax.csv')
+        valid_attri_data = pd.read_csv('LiterallyWikidata/files_needed/valid_attri_data_minmax.csv')
+        test_attri_data = pd.read_csv('LiterallyWikidata/files_needed/test_attri_data_minmax.csv')
+        # num_lit=np.load('LiterallyWikidata/files_needed/num_lit_std.npy')
+        self.train_attri_data=train_attri_data[['e','a','minmax']]
+        self.valid_attri_data=valid_attri_data[['e','a','minmax']]
+        self.test_attri_data=test_attri_data[['e','a','minmax']]
+
+        #attri_data = pd.read_csv(ds_path + 'files_needed/numeric_literals_ver06')
         #var=var=['P1082','P4010','P2299','P569','P570','P2046','P2032','P2031','P2048','P625_Latitude','P625_Longtiude']
         #attri_data = attri_data[attri_data.a.isin(var)]
-        self.attri_data = attri_data[['e','a','std_v']]
+        # = attri_data[['e','a','minmax_v']]
         #self.attri_data = attri_data.to_numpy() 
 #       self.attri_data = self.attri_data.sample(frac=0.5, random_state=42)
-        self.train_attri_data, valid_attri_data = train_test_split(self.attri_data, test_size=0.2,stratify=self.attri_data['a'],
-                                                                    random_state=802)
+        #self.train_attri_data, valid_attri_data = train_test_split(self.attri_data, test_size=0.2,stratify=self.attri_data['a'],random_state=802)
 
-        self.valid_attri_data, self.test_attri_data = train_test_split(valid_attri_data, test_size=0.5,stratify=valid_attri_data['a'],random_state=802)   
+        #self.valid_attri_data, self.test_attri_data = train_test_split(valid_attri_data, test_size=0.5,stratify=valid_attri_data['a'],random_state=802)   
 
 
         ## Group Entities, relations, attributes
-        self.entities = pd.read_csv(ds_path + 'Entities/entity_labels_en.txt', sep='\t', names=['label', 'name'])
+        list_ent_ids =[]
+        with open('LiterallyWikidata/files_needed/list_ent_ids.txt','r') as f:
+            for line in f:
+                list_ent_ids.append(line.strip())
+        
+        self.entities = list_ent_ids
+        #self.entities = pd.read_csv(ds_path + 'Entities/entity_labels_en.txt', sep='\t', names=['label', 'name'])
         self.relations = pd.read_csv(ds_path + 'Relations/relation_labels_en.txt', sep='\t', names=['label', 'name'])
-        with open('LiterallyWikidata/files_needed/attribute.txt','r') as fr:
-            self.attributes = [line.strip() for line in fr] 
+        self.attributes = self.train_attri_data['a'].unique().tolist()
 
         # Dict Entites and relations
         #look like{ent:idx,rel:idx,att:idx}
-        self.dict_ent_2_idx = dict(zip(self.entities['label'], np.arange(0, len(self.entities), 1)))
+        #self.dict_ent_2_idx = dict(zip(self.entities['label'], np.arange(0, len(self.entities), 1)))
+        self.dict_ent_2_idx = {e:i for i,e in enumerate(list_ent_ids)}
         self.dict_rel_2_idx = dict(zip(self.relations['label'], np.arange(0, len(self.relations), 1)))
         self.dict_att_2_idx = dict(zip(self.attributes, np.arange(0, len(self.attributes), 1)))
 

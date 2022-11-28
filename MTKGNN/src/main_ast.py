@@ -13,7 +13,7 @@ import sys,os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 sys.path.append('./MTKGNN/KGMTL4Rec')
 sys.path.append('LiterallyWikidata')
-from Model import KGMTL
+from Model_onlyATT import KGMTL
 from Evaluation import *
 from Data_Processing_copy_less import *
 
@@ -21,13 +21,13 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=20)
-    parser.add_argument('-batch_size', type=float, required=False, default=200
+    parser.add_argument('-epochs', type=int, required=False, default=10)
+    parser.add_argument('-batch_size', type=float, required=False, default=32
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
     parser.add_argument('-model_path', type=str, required=False, default='MLT')
-    parser.add_argument('-emb_size', type=int, required=False, default=50)
-    parser.add_argument('-hidden_size', type=int, required=False, default=64)
+    parser.add_argument('-emb_size', type=int, required=False, default=128)
+    parser.add_argument('-hidden_size', type=int, required=False, default=100)
     parser.add_argument('-Ns', type=int, required=False, default=3)
     parser.add_argument('-device', type=str, required=False, default="cuda:0")
     parser.add_argument('-nb_hist', type=int, required=False, default=1)
@@ -184,16 +184,16 @@ def main():
             print('Better Performance! Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
             
-            torch.save(model.state_dict(),'exp_ast/saved_model/std_ast_model_{}_{}_{}_50_64.pt'.format(epochs, batch_size,learning_rate))
+            torch.save(model.state_dict(),'exp_pretrained/saved_model/model_{}_{}_{}_changeinit.pt'.format(epochs, batch_size,learning_rate))
             
 
-        #with open('loss_record/ast_model_{}_{}_{}.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
-        #     pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
+        with open('exp_pretrained/loss_record/model_{}_{}_{}_changeinit.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
+            pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
         
     #test model
     model.eval()
     table = eval_headattr(valid_loader_head_attr, device , mymodel=model) 
-    save_result(table, 'exp_ast/predicted_result/std_ast_{}_{}_50_64preds_att_head.csv'.format(epochs,batch_size)) 
+    save_result(table, 'exp_pretrained/predicted_result/model_{}_{}_att_head_changeinit.csv'.format(epochs,batch_size)) 
 
     # 
 
