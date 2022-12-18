@@ -21,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=10)
+    parser.add_argument('-epochs', type=int, required=False, default=1000)
     parser.add_argument('-batch_size', type=float, required=False, default=32
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
@@ -108,6 +108,9 @@ def main():
     loss_record = {'rel_train':[],'rel_valid':[],'att_h_train':[],'att_t_train':[],'att_h_val':[],'att_t_val':[],'ast_train':[]}
     best_mse = 1000
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate) 
+    early_stop_count = 0
+    config = {'early_stop':10} 
+
     for epoch in range(epochs):
         model.train() 
         #loss_1_epoch = []; loss_2_epoch = []; loss_3_epoch = []; loss_4_ast= []
@@ -185,10 +188,17 @@ def main():
                 .format(epoch , best_mse))
             
             torch.save(model.state_dict(),'exp_pretrained/saved_model/model_{}_{}_{}_changeinit.pt'.format(epochs, batch_size,learning_rate))
-            
-
-        with open('exp_pretrained/loss_record/model_{}_{}_{}_changeinit.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
-            pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
+            early_stop_count = 0
+        else:
+            early_stop_count += 1
+        
+        epoch += 1
+        
+        if early_stop_count == config['early_stop']:
+            break
+    print('Finished training after {} epochs'.format(epoch))
+    with open('exp_pretrained/loss_record/model_{}_{}_{}_changeinit.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
+        pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
         
     #test model
     model.eval()
