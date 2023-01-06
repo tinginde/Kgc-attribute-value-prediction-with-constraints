@@ -31,13 +31,13 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
 
-myseed = 80215  # set a random seed for reproducibility
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(myseed)
-torch.manual_seed(myseed)
-if torch.cuda.is_available():
-    torch.cuda.manual_seed_all(myseed)
+# myseed = 80215  # set a random seed for reproducibility
+# torch.backends.cudnn.deterministic = True
+# torch.backends.cudnn.benchmark = False
+# np.random.seed(myseed)
+# torch.manual_seed(myseed)
+# if torch.cuda.is_available():
+#     torch.cuda.manual_seed_all(myseed)
 
 """# **Some Utilities**
 
@@ -122,15 +122,15 @@ y_trainset, y_validset,y_testset = train_attri_data.loc[:,'minmax'].to_numpy(),v
 """
 
 device = get_device()                 # get the current available device ('cpu' or 'cuda')
-os.makedirs('exp/models_minmax_l2/', exist_ok=True)  # The trained model will be saved to ./models/
+os.makedirs('models_minmax_1229/', exist_ok=True)  # The trained model will be saved to ./models/
 
 # TODO: How to tune these hyper-parameters to improve your model's performance?
 config = {
     'n_epochs': 500,                # maximum number of epochs
     'batch_size': 200,               # mini-batch size for dataloader
     'learning_rate':0.0001,
-    'early_stop': 30,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': 'exp/models_minmax_l2/' , # your model will be saved here
+    'early_stop': 50,               # early stopping epochs (the number epochs since your model's last improvement)
+    'save_path': 'models_minmax_1229/' , # your model will be saved here
 }
 
 
@@ -274,7 +274,7 @@ def train(tr_set, dv_set, model, config, device):
             min_mse = dev_mse
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch + 1, min_mse))
-            torch.save(model.state_dict(), config['save_path']+'model_minmax_3layer.pt')  # Save model to specified path
+            torch.save(model.state_dict(), config['save_path']+'model_minmax_3layer_b200.pt')  # Save model to specified path
             early_stop_cnt = 0
         else:
             early_stop_cnt += 1
@@ -322,16 +322,17 @@ def dev(dv_set, model, device):
 
 def test(tt_set, model, device):
     model.eval()                                # set model to evalutation mode
-    preds = []; y_b=[]
+    preds = []; y_b=[] ; id_a=[]
     for x,y in tt_set:                            # iterate through the dataloader
         x ,y = x.to(device), y.to(device)                          # move data to device (cpu/cuda)
         with torch.no_grad():                   # disable gradient calculation
             pred = model(x)                     # forward pass (compute output)
             preds.append(pred.detach().cpu())
-            y_b.append(y.detach().cpu())   # collect prediction
+            y_b.append(y.detach().cpu())
+            id_a.append(y['a'].detach().cpu())   # collect prediction
     preds = torch.cat(preds, dim=0).numpy().reshape(-1,1)     # concatenate all predictions and convert to a numpy array
     y_b= torch.cat(y_b,0).numpy().reshape(-1,1) 
-    table  = np.concatenate((preds, y_b),axis=1)
+    table  = np.concatenate((preds, y_b, id_a),axis=1)
     eval_matrics(y_b,preds)
     return table
 
@@ -357,7 +358,7 @@ import pickle
 model_loss, model_loss_record = train(train_loader, valid_loader, model, config, device)
 
 #save loss record for plt
-with open(config['save_path']+'model_minmax_3layer.pickle','wb') as fw:
+with open(config['save_path']+'model_minmax_3layer_b200.pickle','wb') as fw:
     pickle.dump(model_loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
 #plot_learning_curve(model_loss_record, title='deep model')
 
@@ -365,11 +366,11 @@ print('model_loss min_mse:',model_loss)
 
 del model
 model = NeuralNet(256).to(device)
-ckpt = torch.load(config['save_path']+'model_minmax_3layer.pt', map_location='cpu')  # Load your best model
+ckpt = torch.load(config['save_path']+'model_minmax_3layer_b200.pt', map_location='cpu')  # Load your best model
 model.load_state_dict(ckpt)
 #plot_pred(dv_set, model, device)  # Show prediction on the validation set
 
 
 
 preds = test(valid_loader, model, device)  # predict 
-save_pred(preds, config['save_path']+'preds_result_model_minmax_3layer')     # save prediction file to pred.csv
+save_pred(preds, config['save_path']+'preds_result_model_minmax_3layer_kaiming')     # save prediction file to pred.csv

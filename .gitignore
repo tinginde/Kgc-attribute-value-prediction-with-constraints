@@ -54,3 +54,5 @@ baseline/models
 exp_802_sep
 models_minmax
 
+models_minmax_1229v/1layer_b200v_nan.log
+models_minmax_1229v/3layer_b200v_nan.log
