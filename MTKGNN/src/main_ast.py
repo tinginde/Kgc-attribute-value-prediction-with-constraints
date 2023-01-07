@@ -21,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description='KGMTL4REC')
 
     parser.add_argument('-ds', type=str, required=False, default="LiterallyWikidata/")
-    parser.add_argument('-epochs', type=int, required=False, default=1000)
+    parser.add_argument('-epochs', type=int, required=False, default=200)
     parser.add_argument('-batch_size', type=float, required=False, default=32
     )
     parser.add_argument('-lr', type=float, required=False, default=0.001)
@@ -109,7 +109,7 @@ def main():
     best_mse = 1000
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate) 
     early_stop_count = 0
-    config = {'early_stop':10} 
+    config = {'early_stop':15} 
 
     for epoch in range(epochs):
         model.train() 
@@ -187,7 +187,7 @@ def main():
             print('Better Performance! Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch , best_mse))
             
-            torch.save(model.state_dict(),'exp_pretrained/saved_model/model_{}_{}_{}_changeinit.pt'.format(epochs, batch_size,learning_rate))
+            torch.save(model.state_dict(),'exp_pretrained/saved_model/model_{}_{}_{}_0107.pt'.format(epochs, batch_size,learning_rate))
             early_stop_count = 0
         else:
             early_stop_count += 1
@@ -197,13 +197,13 @@ def main():
         if early_stop_count == config['early_stop']:
             break
     print('Finished training after {} epochs'.format(epoch))
-    with open('exp_pretrained/loss_record/model_{}_{}_{}_changeinit.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
+    with open('exp_pretrained/loss_record/model_{}_{}_{}_0107.pickle'.format(epochs, batch_size,learning_rate),'wb') as fw:
         pickle.dump(loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
         
     #test model
     model.eval()
     table = eval_headattr(valid_loader_head_attr, device , mymodel=model) 
-    save_result(table, 'exp_pretrained/predicted_result/model_{}_{}_att_head_changeinit.csv'.format(epochs,batch_size)) 
+    save_result(table, 'exp_pretrained/predicted_result/model_{}_{}_att_head_0107.csv'.format(epochs,batch_size)) 
 
     # 
 

@@ -123,7 +123,7 @@ y_trainset, y_validset,y_testset = train_attri_data.loc[:,'minmax'].to_numpy(),v
 """
 
 device = get_device()                 # get the current available device ('cpu' or 'cuda')
-os.makedirs('models_onlye/', exist_ok=True)  # The trained model will be saved to ./models/
+os.makedirs('models_0106/', exist_ok=True)  # The trained model will be saved to ./models/
 
 # TODO: How to tune these hyper-parameters to improve your model's performance?
 config = {
@@ -131,7 +131,7 @@ config = {
     'batch_size': 32,               # mini-batch size for dataloader
     'learning_rate':0.001,
     'early_stop': 30,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': 'models_onlye/' , # your model will be saved here
+    'save_path': 'models_0106/' , # your model will be saved here
 }
 
 
@@ -285,7 +285,7 @@ def train(tr_set, dv_set, model, config, device):
             min_mse = mean_valid_loss
             print('Saving model (epoch = {:4d}, loss = {:.4f})'
                 .format(epoch + 1, min_mse))
-            torch.save(model.state_dict(), config['save_path']+'model_onlye_compare.pt')  # Save model to specified path
+            torch.save(model.state_dict(), config['save_path']+'model_ea_2layer_b32.pt')  # Save model to specified path
             early_stop_cnt = 0
         else:
             early_stop_cnt += 1
@@ -352,7 +352,7 @@ import pickle
 model_loss, model_loss_record = train(train_loader, valid_loader, model, config, device)
 
 #save loss record for plt
-with open(config['save_path']+'model_onlye_compare.pickle','wb') as fw:
+with open(config['save_path']+'model_ea_2layer_b32.pickle','wb') as fw:
     pickle.dump(model_loss_record,fw,protocol=pickle.HIGHEST_PROTOCOL)
 #plot_learning_curve(model_loss_record, title='deep model')
 
@@ -360,11 +360,11 @@ with open(config['save_path']+'model_onlye_compare.pickle','wb') as fw:
 
 del model
 model = NeuralNet(256).to(device)
-ckpt = torch.load(config['save_path']+'model_onlye_compare.pt', map_location='cpu')  # Load your best model
+ckpt = torch.load(config['save_path']+'model_ea_2layer_b32.pt', map_location='cpu')  # Load your best model
 model.load_state_dict(ckpt)
 #plot_pred(dv_set, model, device)  # Show prediction on the validation set
 
 
 
 preds = test(valid_loader, model, device)  # predict 
-save_pred(preds, config['save_path']+'preds_result_onlye_compare')     # save prediction file to pred.csv
+save_pred(preds, config['save_path']+'preds_result_ea_2layer_b32')     # save prediction file to pred.csv

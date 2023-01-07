@@ -56,3 +56,13 @@ models_minmax
 
 models_minmax_1229v/1layer_b200v_nan.log
 models_minmax_1229v/3layer_b200v_nan.log
+exp_pretrained/saved_model/model_200_32_0.001_0107.pt
+exp_pretrained/saved_model/model_500_32_0.001_0107.pt
+baseline/iml_pt/model_birth_nocon_pretraine.pt
+baseline/iml_pt/model_death_nocon_pretraine.pt
+baseline/iml_pt/model_death_nocon.pt
+baseline/iml_pt/model_longi_nocon_pretraine.pt
+baseline/iml_pt/model_longitude_nocon_pretraine.pt
+model_lati_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_loclongi_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_loclongi_nocon_pretraine.pt
