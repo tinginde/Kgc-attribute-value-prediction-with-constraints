@@ -66,3 +66,12 @@ baseline/iml_pt/model_longitude_nocon_pretraine.pt
 model_lati_nocon_pretraine_minmax.pt
 baseline/iml_pt/model_loclongi_nocon_pretraine_minmax.pt
 baseline/iml_pt/model_loclongi_nocon_pretraine.pt
+baseline/iml_pt/model_3_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_4_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_7_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_9_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_20_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_27_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_30_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_46_nocon_pretraine_minmax.pt
+baseline/iml_pt/model_70_nocon_pretraine_minmax.pt

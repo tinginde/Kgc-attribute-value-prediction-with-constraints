@@ -5,6 +5,7 @@ from itertools import chain
 import random
 import pickle
 import numpy as np
+import math
 
 ##****** Set Device ******
 if torch.cuda.is_available():  
@@ -94,7 +95,7 @@ class KGMTL(nn.Module):
         self.dropout = nn.Dropout(config['input_dropout'])
 
         self.tahn = nn.Tanh()
-        self.relu = nn.ReLU()
+        #self.relu = nn.ReLU()
 
         self.loss_fn = nn.BCEWithLogitsLoss()
         self.criterion = nn.MSELoss()
@@ -128,27 +129,27 @@ class KGMTL(nn.Module):
         x_t = self.ent_embeddings(self.ent2idx[t])
         # # Mh, Mr, Mt are the h,r,t hidden layers 
         # ## hidden_struct_net_fc1 is the struct net hidden layer
-        struct_net_fc1 = self.relu(self.hidden_struct_net_fc(self.Mh(x_h) + self.Mr(x_r) + self.Mt(x_t)))
+        struct_net_fc1 = self.tahn(self.hidden_struct_net_fc(self.Mh(x_h) + self.Mr(x_r) + self.Mt(x_t)))
         pred1 = self.dropout(struct_net_fc1)
 
         return pred1
     
     def AttrNet_h_forward(self, h, ah):
         ## 2nd part of KGMTL4REC -> AttrNet for head entity
-        x_ah = self.att_embeddings(ah)
-        x_h = self.ent_embeddings(h)
+        x_ah = self.att_embeddings(ah)*math.sqrt(2./128)
+        x_h = self.ent_embeddings(h)*math.sqrt(2./128)
         ## hidden_head_att_net_fc1 is the head attribute net hidden layer
-        head_att_net_fc1 = self.relu(self.hidden_attr_net_fc(torch.cat((self.ah(x_ah), self.Mh(x_h)),1)))
+        head_att_net_fc1 = self.tahn(self.hidden_attr_net_fc(torch.cat((self.ah(x_ah), self.Mh(x_h)),1)))
         pred_h = self.dropout(head_att_net_fc1) 
         ##
         return pred_h
         
     def AttrNet_t_forward(self, t, at): 
         ## 3rd part of the NN -> AttrNet for tail entity
-        x_at = self.att_embeddings(at)
-        x_t = self.ent_embeddings(t)
+        x_at = self.att_embeddings(at)*math.sqrt(2./128)
+        x_t = self.ent_embeddings(t)*math.sqrt(2./128)
         ## hidden_head_att_net_fc1 is the head attribute net hidden layer
-        tail_att_net_fc1 = self.relu(self.hidden_attr_net_fc(torch.cat((self.at(x_at), self.Mt(x_t)),1)))
+        tail_att_net_fc1 = self.tahn(self.hidden_attr_net_fc(torch.cat((self.at(x_at), self.Mt(x_t)),1)))
         pred_t = self.dropout(tail_att_net_fc1)  
         ##
         return pred_t
@@ -208,18 +209,18 @@ class KGMTL(nn.Module):
         #pred_right = self.attr_net_right(inputs)
 
 
-        x_ah = self.att_embeddings(att_tensor)
-        x_h = self.ent_embeddings(ent_tensor)
+        x_ah = self.att_embeddings(att_tensor)*math.sqrt(2./128)
+        x_h = self.ent_embeddings(ent_tensor)*math.sqrt(2./128)
         test_mm = self.ah(x_ah)
         inputs = torch.cat([self.ah(x_ah), self.Mh(x_h)], dim=2)
         ## hidden_head_att_net_fc1 is the head attribute net hidden layer
         head_att_net_fc1 = self.relu(self.hidden_attr_net_fc(inputs))
         pred_left = self.dropout(head_att_net_fc1) 
        
-        x_at = self.att_embeddings(att_tensor)
-        x_t = self.ent_embeddings(ent_tensor)
+        x_at = self.att_embeddings(att_tensor)*math.sqrt(2./128)
+        x_t = self.ent_embeddings(ent_tensor)*math.sqrt(2./128)
         inputs = torch.cat([self.at(x_at), self.Mt(x_t)], dim=2)
-        tail_att_net_fc1 = self.relu(self.hidden_attr_net_fc(inputs))
+        tail_att_net_fc1 = self.tahn(self.hidden_attr_net_fc(inputs))
         pred_right = self.dropout(tail_att_net_fc1)  
 
 
