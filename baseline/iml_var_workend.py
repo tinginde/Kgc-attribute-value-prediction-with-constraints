@@ -250,7 +250,7 @@ num_lit_minmax_valid = numeric_literal_array(attri_data_valid, ent2idx, att2idx)
 # date_of_birth = att2idx['P569']
 # date_of_death = att2idx['P570']
 # area = ['P2046']
-# work_start = att2idx['P2031']
+work_start = att2idx['P2031']
 work_end = att2idx['P2032']
 #longitude = att2idx['P625_Longtiude']
 
@@ -310,7 +310,7 @@ x_train, y_train, x_valid, y_valid = make_inputdata(var_predict, num_lit_minmax,
 input_e = torch.LongTensor(x_train.iloc[:,-1].to_numpy())
 entity_embedding = embedding_e(input_e)*math.sqrt(2./128)
 input_e_val = torch.LongTensor(x_valid.iloc[:,-1].to_numpy())
-entity_embedding_val = embedding_e(input_e_val)*math.sqrt(2./128)
+entity_embedding_val = embedding_e(input_e_val)
 
 x_att=torch.FloatTensor(x_train.iloc[:,0:-1].to_numpy())
 x_att_val=torch.FloatTensor(x_valid.iloc[:,0:-1].to_numpy())
@@ -420,7 +420,7 @@ config = {
     'batch_size': 32,               # mini-batch size for dataloader
     'learning_rate':1e-3,
     'early_stop': 15,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': './baseline/iml_pt/model_{}_nocon_pretraine_minmax.pt'.format(var_predict) , # your model will be saved here
+    'save_path': './baseline/iml_cons_pt/model_{}_nocon_pretraine_minmax.pt'.format(var_predict) , # your model will be saved here
     'valid_ratio': 0.1,   # validation_size = train_size * valid_ratio
 }
     
@@ -487,11 +487,10 @@ class NeuralNet(nn.Module):
         x = x.squeeze(1)
         return x
 
-    def cal_loss(self, pred, target):
+    def cal_loss(self, preds, targets):
         ''' Calculate loss '''
         # TODO: you may implement L1/L2 regularization here
-        
-        return self.criterion(pred, target) + 1000
+        return self.criterion(preds, targets)
 
 
 # # **Preprocess**
@@ -539,7 +538,7 @@ def trainer(train_loader, valid_loader, model, config, device):
             #x_constraint = torch.tensor([x[i][pop_idx]*x[i][gdp_per] for i in range(len(x))])
             #print(x_constraint)
             #x_constraint = x_constraint.to(device)
-            loss = model.criterion(pred, y)
+            loss = model.criterion(pred, y )
             #loss = criterion(pred, y) + criterion(pred, x_constraint)
                     #x_constraint = 1000
                      

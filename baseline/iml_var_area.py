@@ -242,7 +242,7 @@ num_lit_minmax_valid = numeric_literal_array(attri_data_valid, ent2idx, att2idx)
 
 
 # ## constraint needed:
-#pop_idx = att2idx['P1082']
+pop_idx = att2idx['P1082']
 #gdp = att2idx['P4010']
 #nominal_gdp = att2idx['P2131']
 # nominal_gdp_per = att2idx['P2132']
@@ -420,7 +420,7 @@ config = {
     'batch_size': 32,               # mini-batch size for dataloader
     'learning_rate':1e-3,
     'early_stop': 15,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': './baseline/iml_pt/model_{}_nocon_pretraine_minmax.pt'.format(var_predict) , # your model will be saved here
+    'save_path': './baseline/iml_pt/model_{}_cons.pt'.format(var_predict) , # your model will be saved here
     'valid_ratio': 0.1,   # validation_size = train_size * valid_ratio
 }
     
@@ -539,7 +539,7 @@ def trainer(train_loader, valid_loader, model, config, device):
             #x_constraint = torch.tensor([x[i][pop_idx]*x[i][gdp_per] for i in range(len(x))])
             #print(x_constraint)
             #x_constraint = x_constraint.to(device)
-            loss = model.criterion(pred, y)
+            loss = model.cal_loss(pred, y)
             #loss = criterion(pred, y) + criterion(pred, x_constraint)
                     #x_constraint = 1000
                      

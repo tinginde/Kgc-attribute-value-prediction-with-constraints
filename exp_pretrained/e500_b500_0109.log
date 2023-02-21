@@ -1,1 +1,369 @@
 nohup: ignoring input
+KGMTL(
+  (ent_embeddings): Embedding(47998, 128)
+  (rel_embeddings): Embedding(280, 128, padding_idx=0)
+  (att_embeddings): Embedding(86, 128, padding_idx=0)
+  (Mh): Linear(in_features=128, out_features=100, bias=False)
+  (Mr): Linear(in_features=128, out_features=100, bias=False)
+  (Mt): Linear(in_features=128, out_features=100, bias=False)
+  (hidden_struct_net_fc): Linear(in_features=100, out_features=1, bias=True)
+  (ah): Linear(in_features=128, out_features=100, bias=False)
+  (at): Linear(in_features=128, out_features=100, bias=False)
+  (hidden_attr_net_fc): Linear(in_features=200, out_features=1, bias=True)
+  (dropout): Dropout(p=0.5, inplace=False)
+  (tanh): Tanh()
+  (relu): ReLU()
+  (loss_fn): BCEWithLogitsLoss()
+  (criterion): MSELoss()
+)
+train att set: 237046
+valid att set: 29631
+train rel set: 444756
+val rel set: 57200
+X_train_head_attr: 218757
+X_val_head_attr: 19978
+epoch 0, SUM Training loss 0.8146407147175383
+epoch 0, training AST loss 1.7875732630491257
+epoch 0, Training loss_head 0.2099920427021773
+epoch 0, Validation loss_head 0.2837408053733939
+Better Performance! Saving model (epoch =    0, loss = 0.2837)
+epoch 1, SUM Training loss 0.8185246634529438
+epoch 1, training AST loss 1.3251899555325508
+epoch 1, Training loss_head 0.21750370672215585
+epoch 1, Validation loss_head 0.32549255145163786
+epoch 2, SUM Training loss 0.8329220555322532
+epoch 2, training AST loss 1.0350015511115391
+epoch 2, Training loss_head 0.23338551046419106
+epoch 2, Validation loss_head 0.2738986854294926
+Better Performance! Saving model (epoch =    2, loss = 0.2739)
+epoch 3, SUM Training loss 0.8280973358570098
+epoch 3, training AST loss 0.8795720636844635
+epoch 3, Training loss_head 0.22906028839079684
+epoch 3, Validation loss_head 0.23698390552299267
+Better Performance! Saving model (epoch =    3, loss = 0.2370)
+epoch 4, SUM Training loss 0.8225754453894575
+epoch 4, training AST loss 0.8021372497081757
+epoch 4, Training loss_head 0.22403813164075942
+epoch 4, Validation loss_head 0.22235124933797948
+Better Performance! Saving model (epoch =    4, loss = 0.2224)
+epoch 5, SUM Training loss 0.8197549984033434
+epoch 5, training AST loss 0.742840126156807
+epoch 5, Training loss_head 0.22143734903461965
+epoch 5, Validation loss_head 0.21907832773056563
+Better Performance! Saving model (epoch =    5, loss = 0.2191)
+epoch 6, SUM Training loss 0.8173843446401801
+epoch 6, training AST loss 0.7201011595981461
+epoch 6, Training loss_head 0.21937454616314214
+epoch 6, Validation loss_head 0.22247735959820117
+epoch 7, SUM Training loss 0.8164975105849935
+epoch 7, training AST loss 0.6874271463602781
+epoch 7, Training loss_head 0.21861722145135806
+epoch 7, Validation loss_head 0.22434874945525926
+epoch 8, SUM Training loss 0.8162891736468378
+epoch 8, training AST loss 0.6552215268214544
+epoch 8, Training loss_head 0.2185022691688615
+epoch 8, Validation loss_head 0.21557077862127022
+Better Performance! Saving model (epoch =    8, loss = 0.2156)
+epoch 9, SUM Training loss 0.8150327662519535
+epoch 9, training AST loss 0.6286177575588227
+epoch 9, Training loss_head 0.21737377120851106
+epoch 9, Validation loss_head 0.20626186534428093
+Better Performance! Saving model (epoch =    9, loss = 0.2063)
+epoch 10, SUM Training loss 0.8136955579945
+epoch 10, training AST loss 0.6070231023159894
+epoch 10, Training loss_head 0.21606937307800106
+epoch 10, Validation loss_head 0.2000958295988559
+Better Performance! Saving model (epoch =   10, loss = 0.2001)
+epoch 11, SUM Training loss 0.8125630983577541
+epoch 11, training AST loss 0.5906091618041197
+epoch 11, Training loss_head 0.21496551442098563
+epoch 11, Validation loss_head 0.19616280674095227
+Better Performance! Saving model (epoch =   11, loss = 0.1962)
+epoch 12, SUM Training loss 0.8117823147195747
+epoch 12, training AST loss 0.5767802298069
+epoch 12, Training loss_head 0.21416003768648864
+epoch 12, Validation loss_head 0.19389278947777433
+Better Performance! Saving model (epoch =   12, loss = 0.1939)
+epoch 13, SUM Training loss 0.8110044842032285
+epoch 13, training AST loss 0.5693478435277939
+epoch 13, Training loss_head 0.21350216730849422
+epoch 13, Validation loss_head 0.1963398949632474
+epoch 14, SUM Training loss 0.810666803844418
+epoch 14, training AST loss 0.5591147129734357
+epoch 14, Training loss_head 0.21324810208845102
+epoch 14, Validation loss_head 0.19634176919299812
+epoch 15, SUM Training loss 0.8102592912657576
+epoch 15, training AST loss 0.5495428307913244
+epoch 15, Training loss_head 0.21290911104342553
+epoch 15, Validation loss_head 0.1946870449718307
+epoch 16, SUM Training loss 0.8096647108103812
+epoch 16, training AST loss 0.541584725765621
+epoch 16, Training loss_head 0.21236403064614495
+epoch 16, Validation loss_head 0.1915303325901604
+Better Performance! Saving model (epoch =   16, loss = 0.1915)
+epoch 17, SUM Training loss 0.8091366913964354
+epoch 17, training AST loss 0.5336410142481327
+epoch 17, Training loss_head 0.21188714724065327
+epoch 17, Validation loss_head 0.18992974267168972
+Better Performance! Saving model (epoch =   17, loss = 0.1899)
+epoch 18, SUM Training loss 0.8086976392526976
+epoch 18, training AST loss 0.5278013517197809
+epoch 18, Training loss_head 0.21150343891627585
+epoch 18, Validation loss_head 0.18998373406015873
+epoch 19, SUM Training loss 0.8083433609026758
+epoch 19, training AST loss 0.523781755194068
+epoch 19, Training loss_head 0.21115165642831363
+epoch 19, Validation loss_head 0.19123643628474607
+epoch 20, SUM Training loss 0.8081142353413726
+epoch 20, training AST loss 0.5205488233339219
+epoch 20, Training loss_head 0.21091322203996823
+epoch 20, Validation loss_head 0.192494174337251
+epoch 21, SUM Training loss 0.807894032172822
+epoch 21, training AST loss 0.516083683479916
+epoch 21, Training loss_head 0.21073958338925117
+epoch 21, Validation loss_head 0.19228560308075895
+epoch 22, SUM Training loss 0.8076074424469645
+epoch 22, training AST loss 0.5103123003373975
+epoch 22, Training loss_head 0.210498561612493
+epoch 22, Validation loss_head 0.18969199256913102
+Better Performance! Saving model (epoch =   22, loss = 0.1897)
+epoch 23, SUM Training loss 0.8072267189315557
+epoch 23, training AST loss 0.5053608439241847
+epoch 23, Training loss_head 0.2101196096478347
+epoch 23, Validation loss_head 0.1873987936861952
+Better Performance! Saving model (epoch =   23, loss = 0.1874)
+epoch 24, SUM Training loss 0.8069274495119453
+epoch 24, training AST loss 0.5020706313848495
+epoch 24, Training loss_head 0.20983637320640702
+epoch 24, Validation loss_head 0.18688130597064134
+Better Performance! Saving model (epoch =   24, loss = 0.1869)
+epoch 25, SUM Training loss 0.8067044495524538
+epoch 25, training AST loss 0.5007081086245867
+epoch 25, Training loss_head 0.20962083778778362
+epoch 25, Validation loss_head 0.1863793705575343
+Better Performance! Saving model (epoch =   25, loss = 0.1864)
+epoch 26, SUM Training loss 0.8064520034938056
+epoch 26, training AST loss 0.5037652325850946
+epoch 26, Training loss_head 0.20938604409608388
+epoch 26, Validation loss_head 0.18681694356037157
+epoch 27, SUM Training loss 0.8064104893322201
+epoch 27, training AST loss 0.5012258873986346
+epoch 27, Training loss_head 0.20936225593119284
+epoch 27, Validation loss_head 0.1881008236568736
+epoch 28, SUM Training loss 0.8065024821114705
+epoch 28, training AST loss 0.49712020312917643
+epoch 28, Training loss_head 0.20945270392086346
+epoch 28, Validation loss_head 0.18640798847721254
+epoch 29, SUM Training loss 0.8063454413059798
+epoch 29, training AST loss 0.4934959317247073
+epoch 29, Training loss_head 0.20928523525266043
+epoch 29, Validation loss_head 0.18470390052973568
+Better Performance! Saving model (epoch =   29, loss = 0.1847)
+epoch 30, SUM Training loss 0.8061429832067731
+epoch 30, training AST loss 0.49042410451558327
+epoch 30, Training loss_head 0.2090786954080996
+epoch 30, Validation loss_head 0.18400788900074624
+Better Performance! Saving model (epoch =   30, loss = 0.1840)
+epoch 31, SUM Training loss 0.805981523843476
+epoch 31, training AST loss 0.48819525400176644
+epoch 31, Training loss_head 0.20892705322825084
+epoch 31, Validation loss_head 0.1833668118462501
+Better Performance! Saving model (epoch =   31, loss = 0.1834)
+epoch 32, SUM Training loss 0.8058278245847283
+epoch 32, training AST loss 0.48577027519543964
+epoch 32, Training loss_head 0.20877972958810567
+epoch 32, Validation loss_head 0.18327970327583246
+Better Performance! Saving model (epoch =   32, loss = 0.1833)
+epoch 33, SUM Training loss 0.8057098488606054
+epoch 33, training AST loss 0.4851124378688195
+epoch 33, Training loss_head 0.2086706821229933
+epoch 33, Validation loss_head 0.1831407146185429
+Better Performance! Saving model (epoch =   33, loss = 0.1831)
+epoch 34, SUM Training loss 0.805674864771713
+epoch 34, training AST loss 0.48292317624603
+epoch 34, Training loss_head 0.20863024834500843
+epoch 34, Validation loss_head 0.18317284464583494
+epoch 35, SUM Training loss 0.805605718457298
+epoch 35, training AST loss 0.4806171703255839
+epoch 35, Training loss_head 0.20856892578199623
+epoch 35, Validation loss_head 0.18277161788316104
+Better Performance! Saving model (epoch =   35, loss = 0.1828)
+epoch 36, SUM Training loss 0.8055026277828123
+epoch 36, training AST loss 0.4790784082299954
+epoch 36, Training loss_head 0.20847376894715677
+epoch 36, Validation loss_head 0.1823230249240247
+Better Performance! Saving model (epoch =   36, loss = 0.1823)
+epoch 37, SUM Training loss 0.8053794471444207
+epoch 37, training AST loss 0.4768962024858123
+epoch 37, Training loss_head 0.20834219582871502
+epoch 37, Validation loss_head 0.1817489764111037
+Better Performance! Saving model (epoch =   37, loss = 0.1817)
+epoch 38, SUM Training loss 0.8052396475139174
+epoch 38, training AST loss 0.4754294957488011
+epoch 38, Training loss_head 0.20820604745266494
+epoch 38, Validation loss_head 0.18137845693161583
+Better Performance! Saving model (epoch =   38, loss = 0.1814)
+epoch 39, SUM Training loss 0.8051226003918978
+epoch 39, training AST loss 0.47537861447781327
+epoch 39, Training loss_head 0.20808827788899364
+epoch 39, Validation loss_head 0.18132069450382166
+Better Performance! Saving model (epoch =   39, loss = 0.1813)
+epoch 40, SUM Training loss 0.8050503656941896
+epoch 40, training AST loss 0.4744489997988794
+epoch 40, Training loss_head 0.2080094866496601
+epoch 40, Validation loss_head 0.18204469060096895
+epoch 41, SUM Training loss 0.8050284791300216
+epoch 41, training AST loss 0.47252636544761206
+epoch 41, Training loss_head 0.2080145743699379
+epoch 41, Validation loss_head 0.18191958035667968
+epoch 42, SUM Training loss 0.8049891632026847
+epoch 42, training AST loss 0.4704408208991206
+epoch 42, Training loss_head 0.2079797968181958
+epoch 42, Validation loss_head 0.1810153967973484
+Better Performance! Saving model (epoch =   42, loss = 0.1810)
+epoch 43, SUM Training loss 0.8048984345770118
+epoch 43, training AST loss 0.46880808963694354
+epoch 43, Training loss_head 0.207894952455119
+epoch 43, Validation loss_head 0.1803807496919946
+Better Performance! Saving model (epoch =   43, loss = 0.1804)
+epoch 44, SUM Training loss 0.8047903439447599
+epoch 44, training AST loss 0.4674440269668897
+epoch 44, Training loss_head 0.20780703196566797
+epoch 44, Validation loss_head 0.1803884137595968
+epoch 45, SUM Training loss 0.804689658757035
+epoch 45, training AST loss 0.46689734575541125
+epoch 45, Training loss_head 0.20772316821201942
+epoch 45, Validation loss_head 0.18064529325870124
+epoch 46, SUM Training loss 0.8045988018547662
+epoch 46, training AST loss 0.4664745972828662
+epoch 46, Training loss_head 0.20764346207321152
+epoch 46, Validation loss_head 0.1813139718193727
+epoch 47, SUM Training loss 0.8045457599564028
+epoch 47, training AST loss 0.4657028205692768
+epoch 47, Training loss_head 0.20759687023585438
+epoch 47, Validation loss_head 0.1817918782842329
+epoch 48, SUM Training loss 0.8045424156652412
+epoch 48, training AST loss 0.46457211886133465
+epoch 48, Training loss_head 0.20758835448670052
+epoch 48, Validation loss_head 0.1816971942334008
+epoch 49, SUM Training loss 0.804504399959731
+epoch 49, training AST loss 0.46340867057442664
+epoch 49, Training loss_head 0.2075591532698485
+epoch 49, Validation loss_head 0.18101323138275197
+epoch 50, SUM Training loss 0.8044443236445562
+epoch 50, training AST loss 0.46250271621872396
+epoch 50, Training loss_head 0.20749329594748067
+epoch 50, Validation loss_head 0.1802934921977063
+Better Performance! Saving model (epoch =   50, loss = 0.1803)
+epoch 51, SUM Training loss 0.8043455718798957
+epoch 51, training AST loss 0.46160136349499226
+epoch 51, Training loss_head 0.2074007310846693
+epoch 51, Validation loss_head 0.18023702672702863
+Better Performance! Saving model (epoch =   51, loss = 0.1802)
+epoch 52, SUM Training loss 0.8042979420384955
+epoch 52, training AST loss 0.4612331545015551
+epoch 52, Training loss_head 0.2073277481674587
+epoch 52, Validation loss_head 0.1802928492310221
+epoch 53, SUM Training loss 0.8041916703988368
+epoch 53, training AST loss 0.47124519806217263
+epoch 53, Training loss_head 0.20723417504494124
+epoch 53, Validation loss_head 0.18044093628222574
+epoch 54, SUM Training loss 0.8041569070633131
+epoch 54, training AST loss 0.47166914316740904
+epoch 54, Training loss_head 0.207203213521168
+epoch 54, Validation loss_head 0.18176311782256524
+epoch 55, SUM Training loss 0.8043622117098713
+epoch 55, training AST loss 0.47033853004021303
+epoch 55, Training loss_head 0.2074126139266131
+epoch 55, Validation loss_head 0.18104833247006383
+epoch 56, SUM Training loss 0.8043777670373427
+epoch 56, training AST loss 0.46881393447779773
+epoch 56, Training loss_head 0.20741142605284177
+epoch 56, Validation loss_head 0.18001558753629038
+Better Performance! Saving model (epoch =   56, loss = 0.1800)
+epoch 57, SUM Training loss 0.8042931023436797
+epoch 57, training AST loss 0.46771427231102153
+epoch 57, Training loss_head 0.2073336430443666
+epoch 57, Validation loss_head 0.1795670443641499
+Better Performance! Saving model (epoch =   57, loss = 0.1796)
+epoch 58, SUM Training loss 0.8042313095354106
+epoch 58, training AST loss 0.46692250972077
+epoch 58, Training loss_head 0.20727184303493545
+epoch 58, Validation loss_head 0.17953915625486772
+Better Performance! Saving model (epoch =   58, loss = 0.1795)
+epoch 59, SUM Training loss 0.8041637716914678
+epoch 59, training AST loss 0.4655509740114212
+epoch 59, Training loss_head 0.2072136202788735
+epoch 59, Validation loss_head 0.17946749776256157
+Better Performance! Saving model (epoch =   59, loss = 0.1795)
+epoch 60, SUM Training loss 0.8040977211007614
+epoch 60, training AST loss 0.46423953808233387
+epoch 60, Training loss_head 0.20714614506435397
+epoch 60, Validation loss_head 0.179279420689607
+Better Performance! Saving model (epoch =   60, loss = 0.1793)
+epoch 61, SUM Training loss 0.8040287849504372
+epoch 61, training AST loss 0.4632802199452154
+epoch 61, Training loss_head 0.20707652740542928
+epoch 61, Validation loss_head 0.1792885647724641
+epoch 62, SUM Training loss 0.803961545237341
+epoch 62, training AST loss 0.4628023312441886
+epoch 62, Training loss_head 0.20701991376476825
+epoch 62, Validation loss_head 0.17949517386419456
+epoch 63, SUM Training loss 0.8039181946238206
+epoch 63, training AST loss 0.46185116609558463
+epoch 63, Training loss_head 0.2069810309944977
+epoch 63, Validation loss_head 0.17981391677597383
+epoch 64, SUM Training loss 0.8038657118834545
+epoch 64, training AST loss 0.4614498154475139
+epoch 64, Training loss_head 0.20694125143444217
+epoch 64, Validation loss_head 0.18026424733992827
+epoch 65, SUM Training loss 0.8038343871100719
+epoch 65, training AST loss 0.46075105565515434
+epoch 65, Training loss_head 0.2069133555465065
+epoch 65, Validation loss_head 0.18057597945069825
+epoch 66, SUM Training loss 0.8038149838041775
+epoch 66, training AST loss 0.4600223591968195
+epoch 66, Training loss_head 0.20689000361579465
+epoch 66, Validation loss_head 0.18056371177389371
+epoch 67, SUM Training loss 0.8037857017283188
+epoch 67, training AST loss 0.4591606345904224
+epoch 67, Training loss_head 0.2068674807300244
+epoch 67, Validation loss_head 0.18004070717392254
+epoch 68, SUM Training loss 0.8037321420379463
+epoch 68, training AST loss 0.4583470093599264
+epoch 68, Training loss_head 0.2067970829886022
+epoch 68, Validation loss_head 0.17949261868736954
+epoch 69, SUM Training loss 0.8036636597471343
+epoch 69, training AST loss 0.45798340333359583
+epoch 69, Training loss_head 0.20672962580992918
+epoch 69, Validation loss_head 0.17959684314665084
+epoch 70, SUM Training loss 0.8036010171902324
+epoch 70, training AST loss 0.4579970683430282
+epoch 70, Training loss_head 0.20668472612684477
+epoch 70, Validation loss_head 0.1799224223749575
+epoch 71, SUM Training loss 0.8035691659761045
+epoch 71, training AST loss 0.4576202824504839
+epoch 71, Training loss_head 0.20665420280916755
+epoch 71, Validation loss_head 0.1803577085884802
+epoch 72, SUM Training loss 0.8035838931256877
+epoch 72, training AST loss 0.45694064246873334
+epoch 72, Training loss_head 0.20666259249137983
+epoch 72, Validation loss_head 0.18046250776539224
+epoch 73, SUM Training loss 0.8035914473767168
+epoch 73, training AST loss 0.4561101308948285
+epoch 73, Training loss_head 0.20666169797038242
+epoch 73, Validation loss_head 0.1799764352575794
+epoch 74, SUM Training loss 0.80354288876647
+epoch 74, training AST loss 0.45533718725045524
+epoch 74, Training loss_head 0.2066260047880954
+epoch 74, Validation loss_head 0.1794855006528075
+epoch 75, SUM Training loss 0.8034835765833704
+epoch 75, training AST loss 0.45487987691242443
+epoch 75, Training loss_head 0.20657185625451366
+epoch 75, Validation loss_head 0.17934822298782804
+Finished training after 76 epochs
+MSE= 0.16922202828157745
+RMSE= 0.4113660514451544
+MAE= 0.3267482453753534
+R2= -6.463011193896037
+Saving results to exp_pretrained/predicted_result/model_500_500_att_head_0109.csv

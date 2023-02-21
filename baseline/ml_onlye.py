@@ -123,7 +123,7 @@ y_trainset, y_validset,y_testset = train_attri_data.loc[:,'minmax'].to_numpy(),v
 """
 
 device = get_device()                 # get the current available device ('cpu' or 'cuda')
-os.makedirs('models_0106/', exist_ok=True)  # The trained model will be saved to ./models/
+os.makedirs('models_0112/', exist_ok=True)  # The trained model will be saved to ./models/
 
 # TODO: How to tune these hyper-parameters to improve your model's performance?
 config = {
@@ -131,7 +131,7 @@ config = {
     'batch_size': 32,               # mini-batch size for dataloader
     'learning_rate':0.001,
     'early_stop': 30,               # early stopping epochs (the number epochs since your model's last improvement)
-    'save_path': 'models_0106/' , # your model will be saved here
+    'save_path': 'models_0112/' , # your model will be saved here
 }
 
 
@@ -203,7 +203,7 @@ class NeuralNet(nn.Module):
         # Define your neural network here
         # TODO: How to modify this model to achieve better performance?
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 100),
+            nn.Linear(input_dim, 200),
             nn.ReLU(),
             nn.Dropout(0.5),
             # nn.Linear(256, 128),
@@ -215,7 +215,7 @@ class NeuralNet(nn.Module):
             # nn.Linear(128, 64),
             # nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.Linear(100, 1)
+            nn.Linear(200, 1)
         )
 
         # Mean squared error loss
