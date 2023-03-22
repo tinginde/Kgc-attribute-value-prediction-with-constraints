@@ -155,3 +155,5 @@ baseline/iml_cons_realv/workend_cons_v1.log
 baseline/iml_cons_realv/workend_cons.log
 baseline/iml_cons_realv/workstart_cons_v1.log
 baseline/iml_cons_realv/workstart_cons.log
+requirements.txt
+for_thesis_data_exploration.ipynb
